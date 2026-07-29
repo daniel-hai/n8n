@@ -98,6 +98,7 @@ import {
 	type IConnections,
 	type IWorkflowSettings,
 	type IWorkflowExecutionDataProcess,
+	type IExecutionContext,
 	type DataTableFilter,
 	type DataTableRow,
 	type DataTableRows,
@@ -147,7 +148,8 @@ import { FolderService } from '@/services/folder.service';
 import { NodeResourceExplorerService } from '@/services/node-resource-explorer.service';
 import { ProjectService } from '@/services/project.service.ee';
 import { RoleService } from '@/services/role.service';
-import { InstanceSettings } from 'n8n-core';
+import { ExecutionContextService, InstanceSettings } from 'n8n-core';
+import { DynamicCredentialsProxy } from '@/credentials/dynamic-credentials-proxy';
 import { TagService } from '@/services/tag.service';
 import { WorkflowFinderService } from '@/workflows/workflow-finder.service';
 import { WorkflowHistoryService } from '@/workflows/workflow-history/workflow-history.service';
@@ -269,6 +271,8 @@ export class InstanceAiAdapterService {
 		private readonly outboundHttp: OutboundHttp,
 		private readonly aiGatewayService: AiGatewayService,
 		private readonly workflowTemplatesService: WorkflowTemplatesService,
+		private readonly executionContextService: ExecutionContextService,
+		private readonly dynamicCredentialsProxy: DynamicCredentialsProxy,
 		private readonly nodeCatalogService?: NodeCatalogService,
 		// Optional: absent only in package/test contexts constructed without DI.
 		// DI (by type, not position) always provides it in a running instance.
@@ -300,6 +304,13 @@ export class InstanceAiAdapterService {
 			/** Host-resolved model for the run — fallback for utility LLM calls
 			 *  (simulation fixtures, destructiveness classification). */
 			modelId?: ModelConfig;
+			/** n8n-auth cookie for the acting user, captured at the HTTP entry point.
+			 *  Threaded into executions/credential tests so end-user (dynamic)
+			 *  credentials can resolve this user's own connection. Undefined for
+			 *  runs with no live request in scope (e.g. suspended-run restoration
+			 *  after a restart) — dynamic resolution is then skipped gracefully,
+			 *  the same way it is for an editor run with no session. */
+			n8nAuthCookie?: string;
 		},
 	): InstanceAiContext {
 		const {
@@ -311,6 +322,7 @@ export class InstanceAiAdapterService {
 			agentId,
 			configEvalsEnabled,
 			modelId,
+			n8nAuthCookie,
 		} = options ?? {};
 
 		// Record gateway availability once per context. Fire-and-forget: the
@@ -324,8 +336,13 @@ export class InstanceAiAdapterService {
 			projectId,
 			modelId,
 			workflowService: this.createWorkflowAdapter(user, threadId, projectId),
-			executionService: this.createExecutionAdapter(user, pushRef, threadId),
-			credentialService: this.createCredentialAdapter(user, projectId, credentialIdAllowlist),
+			executionService: this.createExecutionAdapter(user, pushRef, threadId, n8nAuthCookie),
+			credentialService: this.createCredentialAdapter(
+				user,
+				projectId,
+				credentialIdAllowlist,
+				n8nAuthCookie,
+			),
 			nodeService: this.createNodeAdapter(user),
 			dataTableService: this.createDataTableAdapter(user, projectId),
 			...(configEvalsEnabled && this.evaluationConfigService
@@ -1028,6 +1045,7 @@ export class InstanceAiAdapterService {
 		user: User,
 		pushRef?: string,
 		threadId?: string,
+		n8nAuthCookie?: string,
 	): InstanceAiExecutionService {
 		const {
 			workflowFinderService,
@@ -1040,6 +1058,7 @@ export class InstanceAiAdapterService {
 			telemetry,
 			logger,
 			globalConfig,
+			executionContextService,
 		} = this;
 		const assertNotReadOnly = () => this.assertInstanceNotReadOnly('executions');
 
@@ -1268,6 +1287,13 @@ export class InstanceAiAdapterService {
 					});
 				};
 
+				// Mirrors workflow-execution.service.ts's executeManually: without this,
+				// end-user (dynamic) credentials silently skip resolution in manual mode
+				// and nodes fall back to static/placeholder data.
+				runData.encryptedRunnerIdentity = n8nAuthCookie
+					? await executionContextService.buildManualExecutionCredentials(n8nAuthCookie)
+					: undefined;
+
 				try {
 					const executionId = await workflowRunner.run(runData);
 					const pruneVerificationPins = async (executedNodeNames?: string[]) => {
@@ -1467,8 +1493,15 @@ export class InstanceAiAdapterService {
 		user: User,
 		boundProjectId?: string,
 		credentialIdAllowlist?: string[],
+		n8nAuthCookie?: string,
 	): InstanceAiCredentialService {
-		const { credentialsService, credentialsFinderService, loadNodesAndCredentials } = this;
+		const {
+			credentialsService,
+			credentialsFinderService,
+			loadNodesAndCredentials,
+			executionContextService,
+			dynamicCredentialsProxy,
+		} = this;
 		const getGatewayConfig = async () => await this.getGatewayConfigOrNull();
 
 		const adapter: InstanceAiCredentialService = {
@@ -1482,7 +1515,14 @@ export class InstanceAiAdapterService {
 						projectId: boundProjectId,
 					});
 					const filtered = options?.type ? scoped.filter((c) => c.type === options.type) : scoped;
-					return filtered.map((c): CredentialSummary => ({ id: c.id, name: c.name, type: c.type }));
+					return filtered.map(
+						(c): CredentialSummary => ({
+							id: c.id,
+							name: c.name,
+							type: c.type,
+							isResolvable: c.isResolvable,
+						}),
+					);
 				}
 
 				// Unbound runs (temporary-workflow archiving, the only caller without a
@@ -1504,6 +1544,7 @@ export class InstanceAiAdapterService {
 							id: c.id,
 							name: c.name,
 							type: c.type,
+							isResolvable: c.isResolvable,
 						}),
 					);
 				}
@@ -1520,6 +1561,7 @@ export class InstanceAiAdapterService {
 						id: c.id,
 						name: c.name,
 						type: c.type,
+						isResolvable: c.isResolvable,
 					}),
 				);
 			},
@@ -1530,6 +1572,7 @@ export class InstanceAiAdapterService {
 					id: credential.id,
 					name: credential.name,
 					type: credential.type,
+					isResolvable: credential.isResolvable,
 				} satisfies CredentialDetail;
 			},
 
@@ -1550,11 +1593,53 @@ export class InstanceAiAdapterService {
 					throw new Error(`Credential ${credentialId} not found or not accessible`);
 				}
 
+				let data = await credentialsService.decrypt(credential, true);
+
+				// An end-user (dynamic) credential holds no real secret on the stored
+				// entity itself — the actual connection lives in a per-user resolver
+				// entry. Testing the raw decrypted data would always report a false
+				// failure, so resolve this user's own connection first, the same way
+				// a real execution would (see credentials-helper.ts).
+				if (credential.isResolvable) {
+					const encryptedRunnerIdentity = n8nAuthCookie
+						? await executionContextService.buildManualExecutionCredentials(n8nAuthCookie)
+						: undefined;
+					const executionContext: IExecutionContext | undefined = encryptedRunnerIdentity
+						? {
+								version: 1,
+								establishedAt: Date.now(),
+								source: 'manual',
+								credentials: encryptedRunnerIdentity,
+							}
+						: undefined;
+
+					try {
+						const resolveResult = await dynamicCredentialsProxy.resolveIfNeeded(
+							{
+								id: credential.id,
+								name: credential.name,
+								type: credential.type,
+								isResolvable: credential.isResolvable,
+								resolverId: credential.resolverId ?? undefined,
+							},
+							data,
+							executionContext,
+							undefined, // no workflowId in scope for a standalone credential test
+						);
+						data = resolveResult.data;
+					} catch (error) {
+						return {
+							success: false,
+							message: error instanceof Error ? error.message : String(error),
+						};
+					}
+				}
+
 				const credentialsToTest: ICredentialsDecrypted = {
 					id: credential.id,
 					name: credential.name,
 					type: credential.type,
-					data: await credentialsService.decrypt(credential, true),
+					data,
 				};
 
 				const result = await credentialsService.test(user.id, credentialsToTest);

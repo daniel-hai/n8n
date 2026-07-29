@@ -905,6 +905,7 @@ describe('InstanceAiService — runtime workspace setup', () => {
 			evalCredentialAllowlists: EvalThreadCredentialAllowlistService;
 			instanceAiErrorReporter: ReturnType<typeof createInstanceAiErrorReporterMock>;
 			creditService: { claimRunUsage: Mock };
+			threadN8nAuthCookie: Map<string, string>;
 		};
 		service.settingsService = {
 			getAdminSettings: vi.fn(() => ({ localGatewayDisabled: false, sandboxEnabled: true })),
@@ -974,6 +975,7 @@ describe('InstanceAiService — runtime workspace setup', () => {
 		service.evalCredentialAllowlists = new EvalThreadCredentialAllowlistService();
 		service.instanceAiErrorReporter = createInstanceAiErrorReporterMock();
 		service.creditService = { claimRunUsage: vi.fn() };
+		service.threadN8nAuthCookie = new Map();
 		(createAllTools as Mock).mockReturnValue(new Map());
 		const sandbox = { id: 'sandbox-1' };
 		const workspace = {
@@ -4227,6 +4229,7 @@ describe('InstanceAiService — cross-main task-control routing', () => {
 describe('InstanceAiService — clearThreadState agent-builder cleanup', () => {
 	type Internals = {
 		threadPushRef: Map<string, string>;
+		threadN8nAuthCookie: Map<string, string>;
 		planRequestsByThread: Map<string, number>;
 		runState: { clearThread: Mock };
 		backgroundTasks: { cancelThread: Mock };
@@ -4256,6 +4259,7 @@ describe('InstanceAiService — clearThreadState agent-builder cleanup', () => {
 		const service = Object.create(InstanceAiService.prototype) as unknown as Internals;
 
 		service.threadPushRef = new Map();
+		service.threadN8nAuthCookie = new Map();
 		service.planRequestsByThread = new Map();
 		service.runState = { clearThread: vi.fn(() => ({ active: undefined, suspended: undefined })) };
 		service.backgroundTasks = { cancelThread: vi.fn(() => []) };
