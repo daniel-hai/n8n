@@ -1242,7 +1242,6 @@ describe('project shell import', () => {
 				licenseMocker.enable('feat:variables');
 			});
 
-			/** Both projects need SHARED_URL, bundled at the package top level with `value`. */
 			const sharedGlobalPackage = async (value: string) =>
 				await twoProjectPackage({
 					variables: [
@@ -1299,7 +1298,6 @@ describe('project shell import', () => {
 				}).catch((e: unknown) => e);
 
 				expect(error).toBeInstanceOf(ConflictError);
-				// One issue per project scope that resolved the conflicting global variable.
 				expect((error as ConflictError).meta?.issues).toEqual([
 					{ type: 'variable-conflict', name: 'SHARED_URL', usedByWorkflows: ['WFA'] },
 					{ type: 'variable-conflict', name: 'SHARED_URL', usedByWorkflows: ['WFB'] },
