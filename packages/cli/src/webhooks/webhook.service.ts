@@ -7,6 +7,7 @@ import { ensureError } from '@n8n/utils/errors/ensure-error';
 import {
 	isNodeClassInstance,
 	NodeHelpers,
+	resolveWebhookDescriptionField,
 	UnexpectedError,
 	WebhookPathTakenError,
 } from 'n8n-workflow';
@@ -15,6 +16,7 @@ import type {
 	INode,
 	IRunExecutionData,
 	IWebhookData,
+	IWebhookDescription,
 	IWebhookResponseData,
 	IWorkflowExecuteAdditionalData,
 	WebhookSetupMethodNames,
@@ -324,7 +326,6 @@ export class WebhookService {
 		}
 
 		const workflowId = workflow.id || '__UNSAVED__';
-		const mode = 'internal';
 
 		const returnData: IWebhookData[] = [];
 		for (const webhookDescription of nodeType.description.webhooks) {
@@ -332,13 +333,13 @@ export class WebhookService {
 				continue;
 			}
 
-			let nodeWebhookPath = workflow.expression.getSimpleParameterValue(
+			let nodeWebhookPath = this.evaluateDescriptionProperty(
+				workflow,
 				node,
-				webhookDescription.path,
-				mode,
-				{},
+				webhookDescription,
+				'path',
 			);
-			if (nodeWebhookPath === undefined) {
+			if (nodeWebhookPath === undefined || nodeWebhookPath === null) {
 				this.logger.error(
 					`No webhook path could be found for node "${node.name}" in workflow "${workflowId}".`,
 				);
@@ -354,20 +355,18 @@ export class WebhookService {
 				nodeWebhookPath = nodeWebhookPath.slice(0, -1);
 			}
 
-			const isFullPath: boolean = workflow.expression.getSimpleParameterValue(
+			const isFullPath = this.evaluateDescriptionProperty(
+				workflow,
 				node,
-				webhookDescription.isFullPath,
-				'internal',
-				{},
-				undefined,
+				webhookDescription,
+				'isFullPath',
 				false,
 			) as boolean;
-			const restartWebhook: boolean = workflow.expression.getSimpleParameterValue(
+			const restartWebhook = this.evaluateDescriptionProperty(
+				workflow,
 				node,
-				webhookDescription.restartWebhook,
-				'internal',
-				{},
-				undefined,
+				webhookDescription,
+				'restartWebhook',
 				false,
 			) as boolean;
 			const path = NodeHelpers.getNodeWebhookPath(
@@ -378,12 +377,11 @@ export class WebhookService {
 				restartWebhook,
 			);
 
-			const webhookMethods = workflow.expression.getSimpleParameterValue(
+			const webhookMethods = this.evaluateDescriptionProperty(
+				workflow,
 				node,
-				webhookDescription.httpMethod,
-				mode,
-				{},
-				undefined,
+				webhookDescription,
+				'httpMethod',
 				'GET',
 			);
 
@@ -417,6 +415,32 @@ export class WebhookService {
 		}
 
 		return returnData;
+	}
+
+	/**
+	 * Evaluates a webhook-description property, preferring the field's native
+	 * resolver (see `webhookDescriptionFields` in n8n-workflow) so static-parameter
+	 * nodes never engage the expression engine. Falls back to the engine, which
+	 * returns plain values as-is and only evaluates `=` templates.
+	 */
+	private evaluateDescriptionProperty(
+		workflow: Workflow,
+		node: INode,
+		webhookDescription: IWebhookDescription,
+		property: string,
+		defaultValue?: string | boolean,
+	) {
+		const native = resolveWebhookDescriptionField(node, webhookDescription, property);
+		if (native.resolved) return native.value;
+
+		return workflow.expression.getSimpleParameterValue(
+			node,
+			webhookDescription[property],
+			'internal',
+			{},
+			undefined,
+			defaultValue,
+		);
 	}
 
 	private async _findWebhookConflicts(
