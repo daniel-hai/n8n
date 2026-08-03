@@ -10,6 +10,9 @@ import type {
 } from 'n8n-workflow';
 import { resolveWebhookDescriptionField } from 'n8n-workflow';
 
+/** The description's evaluable fields — the symbol key holds the resolver map. */
+type WebhookDescriptionKey = Exclude<keyof IWebhookDescription, symbol>;
+
 /**
  * A helper class that holds the context for the webhook execution.
  * Provides quality of life methods for evaluating expressions.
@@ -27,13 +30,10 @@ export class WebhookExecutionContext {
 	 * Evaluates a simple expression from the webhook description.
 	 */
 	evaluateSimpleWebhookDescriptionExpression<T extends boolean | number | string | unknown[]>(
-		propertyName: keyof IWebhookDescription,
+		propertyName: WebhookDescriptionKey,
 		executeData?: IExecuteData,
 		defaultValue?: T,
 	): T | undefined {
-		// The symbol key holds the resolver map, never an evaluable value.
-		if (typeof propertyName !== 'string') return defaultValue;
-
 		const native = this.resolveNatively(propertyName);
 		if (native.resolved) return native.value as T | undefined;
 
@@ -51,13 +51,10 @@ export class WebhookExecutionContext {
 	 * Evaluates a complex expression from the webhook description.
 	 */
 	evaluateComplexWebhookDescriptionExpression<T extends NodeParameterValueType>(
-		propertyName: keyof IWebhookDescription,
+		propertyName: WebhookDescriptionKey,
 		executeData?: IExecuteData,
 		defaultValue?: T,
 	): T | undefined {
-		// The symbol key holds the resolver map, never an evaluable value.
-		if (typeof propertyName !== 'string') return defaultValue;
-
 		const native = this.resolveNatively(propertyName);
 		if (native.resolved) return native.value as T | undefined;
 
@@ -78,11 +75,11 @@ export class WebhookExecutionContext {
 	 * resolved value is returned as-is: `defaultValue` only stands in for a
 	 * field the description does not define at all.
 	 */
-	private resolveNatively(propertyName: string) {
+	private resolveNatively(propertyName: WebhookDescriptionKey) {
 		return resolveWebhookDescriptionField(
 			this.workflowStartNode,
 			this.webhookData.webhookDescription,
-			propertyName,
+			String(propertyName),
 		);
 	}
 }

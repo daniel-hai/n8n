@@ -220,10 +220,6 @@ export class LiveWebhooks implements IWebhookManager {
 		// typeVersion 1 body parsing evaluates a hardcoded template.
 		if (startNode.typeVersion === 1) return true;
 
-		// This mode seeds run data that routes credential resolution through this
-		// workflow's expression bridge.
-		if (startNode.parameters.authentication === 'n8nOAuth2') return true;
-
 		if (!nodeParametersAreStatic(startNode)) return true;
 
 		const webhooks = this.nodeTypes.getByNameAndVersion(startNode.type, startNode.typeVersion)

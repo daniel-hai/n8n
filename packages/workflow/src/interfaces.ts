@@ -2995,12 +2995,10 @@ export interface IWebhookData {
 export type WebhookType = 'default' | 'setup';
 
 /**
- * Backend-only key holding native equivalents of a webhook description's
- * expression templates, keyed by field. A symbol so the string-keyed shape of
- * {@link IWebhookDescription} stays unchanged, and so the resolvers are dropped
- * by the JSON serialization that ships descriptions to the editor — the editor
- * keeps evaluating the template strings. Declare fields via
- * `webhookDescriptionFields()` so template and resolver come from one source.
+ * Key under which an {@link IWebhookDescription} holds native (engine-free)
+ * resolvers for its expression-template fields, keyed by field name. Populated
+ * by `webhookDescriptionFields()` and read via `resolveWebhookDescriptionField()`.
+ * Backend-only: not serialized with the description.
  */
 export const WEBHOOK_RESOLVERS: unique symbol = Symbol('webhookDescriptionResolvers');
 

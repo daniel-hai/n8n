@@ -796,14 +796,17 @@ describe('LiveWebhooks', () => {
 			expect(acquireIsolate).toHaveBeenCalled();
 		});
 
-		it('acquires for the n8nOAuth2 authentication mode', async () => {
+		it('still skips for the n8nOAuth2 authentication mode', async () => {
+			// Webhook-phase credential resolution never uses this workflow's bridge:
+			// `WebhookContext.getCredentials` passes no `connectionInputData`, so
+			// `CredentialsHelper.getDecrypted` acquires its own isolate.
 			const request = setupMocks({
 				parameters: { path: webhookPath, httpMethod, authentication: 'n8nOAuth2' },
 			});
 
 			await liveWebhooks.executeWebhook(request, mock<Response>());
 
-			expect(acquireIsolate).toHaveBeenCalled();
+			expect(acquireIsolate).not.toHaveBeenCalled();
 		});
 
 		it('acquires for a trigger type that is not on the allowlist', async () => {
