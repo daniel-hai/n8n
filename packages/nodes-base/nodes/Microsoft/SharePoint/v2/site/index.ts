@@ -4,6 +4,7 @@ import type {
 	INodeListSearchResult,
 	INodeParameterResourceLocator,
 	INodeProperties,
+	JsonObject,
 } from 'n8n-workflow';
 import { NodeApiError, NodeOperationError } from 'n8n-workflow';
 
@@ -93,18 +94,28 @@ export async function getSites(
 					},
 				)) as SiteSearchReply);
 	} catch (error) {
-		// An app with only per-site permissions can't list what it can't see —
-		// point at the URL mode. Delegated refusals keep the transport's message,
-		// which names the missing permission (URL paste would hit the same 403).
-		if (
-			error instanceof NodeApiError &&
-			error.httpCode === '403' &&
-			getSharePointCredentialType.call(this) === SERVICE_PRINCIPAL_AUTH
-		) {
-			throw new NodeOperationError(this.getNode(), 'This app registration cannot search sites', {
-				description:
-					"An app registration with only per-site permissions can't list sites. Choose the site by pasting its URL instead — that still works — or grant the app the Sites.Read.All application permission to enable search.",
-			});
+		// A 403 here is either "this credential/app can't list sites" — steer to a
+		// mode that works — or something else entirely, which passes through as-is.
+		if (error instanceof NodeApiError && error.httpCode === '403') {
+			if (getSharePointCredentialType.call(this) === SERVICE_PRINCIPAL_AUTH) {
+				throw new NodeOperationError(this.getNode(), 'This app registration cannot search sites', {
+					description:
+						"An app registration with only per-site permissions can't list sites. Choose the site by pasting its URL instead — that still works — or grant the app the Sites.Read.All application permission to enable search.",
+				});
+			}
+			// Thrown as NodeApiError (not NodeOperationError) so `description` survives
+			// the REST round trip to the editor — response-helper.ts and the frontend's
+			// rest-api-client only preserve `description` for NodeApiError instances.
+			throw new NodeApiError(
+				this.getNode(),
+				{ message: 'This credential cannot search sites' } as JsonObject,
+				{
+					message: 'This credential cannot search sites',
+					description:
+						'Switch the Site field to URL or ID mode — both support Sites.Selected credentials. Site search itself needs the tenant-wide Sites.Read.All permission (a Microsoft Graph limitation, not required for URL or ID mode).',
+					httpCode: '403',
+				},
+			);
 		}
 		throw error;
 	}
