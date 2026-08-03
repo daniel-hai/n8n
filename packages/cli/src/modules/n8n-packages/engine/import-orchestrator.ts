@@ -26,6 +26,7 @@ import { TagImporter } from '../entities/tag/tag-importer';
 import { droppedTagIds } from '../entities/tag/tag.types';
 import type { TagImportPlan, TagImportRequest } from '../entities/tag/tag.types';
 import { VariableImporter } from '../entities/variable/variable-importer';
+import { divergentOverwrites } from '../entities/variable/variable.types';
 import type {
 	VariableApplyResult,
 	VariableImportPlan,
@@ -158,6 +159,10 @@ export class ImportOrchestrator {
 		}
 
 		const issues = plans.flatMap((plan) => plan.blockingIssues);
+
+		for (const conflict of divergentOverwrites(overwrites)) {
+			issues.push({ type: 'variable-conflict', ...conflict });
+		}
 
 		const quotaFailure = await this.variableImporter.quotaFailure(creations);
 		if (quotaFailure) issues.push({ type: 'variable-limit-exceeded', ...quotaFailure });
