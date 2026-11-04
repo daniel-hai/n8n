@@ -5,10 +5,9 @@ import {
 	type INodeProperties,
 	type INodePropertyOptions,
 	NodeOperationError,
-	tryToParseDateTime,
 } from 'n8n-workflow';
 
-import { normalizeIdList } from './filterOptions';
+import { normalizeIdList, parseDateField } from './filterOptions';
 import { isPlainJsonObject, safeJsonParse } from './json';
 import { mondayError } from './mondayError';
 import { MondayGraphQLClient } from '../transport/MondayGraphQLClient';
@@ -220,20 +219,6 @@ export function deepMergeObjects(base: IDataObject, override: IDataObject): IDat
 	return result;
 }
 
-function parseCloseDate(this: IExecuteFunctions, value: unknown, itemIndex: number): string {
-	let iso: string | null = null;
-	try {
-		iso = tryToParseDateTime(value, this.getTimezone()).toUTC().toISO();
-	} catch {
-		iso = null;
-	}
-	if (iso) return iso;
-	throw new NodeOperationError(this.getNode(), 'Close Date is not a valid date', {
-		itemIndex,
-		description: `Received "${String(value)}". Use an ISO 8601 date, for example 2026-01-31T09:00:00.`,
-	});
-}
-
 /**
  * Builds UpdateFormSettingsInput from the typed fields. Raw Settings merges
  * last and wins. is_anonymous is top level on the pinned API version.
@@ -291,7 +276,7 @@ export function buildFormSettingsInput(
 	} else if (fields.closeDate !== undefined && fields.closeDate !== '') {
 		features.closeDate = {
 			enabled: true,
-			date: parseCloseDate.call(this, fields.closeDate, itemIndex),
+			date: parseDateField.call(this, fields.closeDate, 'Close Date', itemIndex),
 		};
 	}
 	if (

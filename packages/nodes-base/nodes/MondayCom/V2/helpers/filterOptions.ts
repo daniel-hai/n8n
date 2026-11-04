@@ -249,15 +249,37 @@ export function parseDateFilter(
 	filterName: string,
 	itemIndex: number,
 ): string | undefined {
+	return parseInWorkflowTimezone(this, value, `The ${filterName} filter`, itemIndex);
+}
+
+/** parseDateFilter for a field. The error names the field, for example "Close Date". */
+export function parseDateField(
+	this: IExecuteFunctions,
+	value: unknown,
+	fieldName: string,
+	itemIndex: number,
+): string | undefined {
+	return parseInWorkflowTimezone(this, value, fieldName, itemIndex);
+}
+
+function parseInWorkflowTimezone(
+	context: IExecuteFunctions,
+	value: unknown,
+	label: string,
+	itemIndex: number,
+): string | undefined {
 	if (value === undefined || value === null || String(value).trim() === '') return undefined;
+	let iso: string | null = null;
 	try {
-		return tryToParseDateTime(value, this.getTimezone()).toUTC().toISO() ?? undefined;
+		iso = tryToParseDateTime(value, context.getTimezone()).toUTC().toISO();
 	} catch {
-		throw new NodeOperationError(this.getNode(), `The ${filterName} filter is not a valid date`, {
-			itemIndex,
-			description: `Received "${String(value)}". Use an ISO 8601 date, for example 2026-01-31T09:00:00.`,
-		});
+		iso = null;
 	}
+	if (iso) return iso;
+	throw new NodeOperationError(context.getNode(), `${label} is not a valid date`, {
+		itemIndex,
+		description: `Received "${String(value)}". Use an ISO 8601 date, for example 2026-01-31T09:00:00.`,
+	});
 }
 
 /**

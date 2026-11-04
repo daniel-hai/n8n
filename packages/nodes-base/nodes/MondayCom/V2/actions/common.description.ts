@@ -1,6 +1,10 @@
 import type { INodeProperties } from 'n8n-workflow';
 
-import { SEARCH_STRATEGY_OPTIONS } from '../helpers/accountSearch';
+import {
+	SEARCH_STRATEGY_OPTIONS,
+	SEARCH_TIMELINE_KIND_OPTIONS,
+	SEARCH_TIMELINE_PRODUCT_OPTIONS,
+} from '../helpers/accountSearch';
 import { boardResourceLocator } from '../helpers/boardLocator';
 import {
 	FOLDER_ATTRIBUTE_NONE,
@@ -263,7 +267,12 @@ export const searchOptionsProperty: INodeProperties = {
 				'Only return results from these boards. The list shows only the 500 most recently used boards; for boards beyond that window, pass explicit IDs via an expression (an array or a comma-separated string). Choose from the list, or specify IDs using an <a href="https://docs.n8n.io/code/expressions/">expression</a>.',
 			displayOptions: {
 				show: {
-					'/operation': ['searchItemsAccount', 'searchBoardsAccount', 'searchUpdatesAccount'],
+					'/operation': [
+						'searchItemsAccount',
+						'searchBoardsAccount',
+						'searchTimelineItemsAccount',
+						'searchUpdatesAccount',
+					],
 				},
 			},
 		},
@@ -289,6 +298,15 @@ export const searchOptionsProperty: INodeProperties = {
 			displayOptions: { show: { '/operation': ['searchUpdatesAccount'] } },
 		}),
 		{
+			displayName: 'Item IDs',
+			name: 'itemIds',
+			type: 'string',
+			default: '',
+			placeholder: 'e.g. 1234567890, 1234567891',
+			description: 'Only return timeline items of these items. Enter a comma-separated list.',
+			displayOptions: { show: { '/operation': ['searchTimelineItemsAccount'] } },
+		},
+		{
 			// Named searchLimit (not the node-wide `limit` convention) on
 			// purpose: search is hard-capped at 20 results by the API, so
 			// the standard 50 default cannot apply.
@@ -308,6 +326,24 @@ export const searchOptionsProperty: INodeProperties = {
 			default: 'BALANCED',
 			description:
 				'The trade-off between search quality and response time. Update search always uses keyword matching regardless of strategy.',
+		},
+		{
+			displayName: 'Timeline Item Product',
+			name: 'timelineProductKind',
+			type: 'options',
+			options: SEARCH_TIMELINE_PRODUCT_OPTIONS,
+			default: 'crm',
+			description: 'Only return timeline items that come from this monday.com product',
+			displayOptions: { show: { '/operation': ['searchTimelineItemsAccount'] } },
+		},
+		{
+			displayName: 'Timeline Item Type',
+			name: 'timelineType',
+			type: 'options',
+			options: SEARCH_TIMELINE_KIND_OPTIONS,
+			default: 'email',
+			description: 'Only return timeline items of this type',
+			displayOptions: { show: { '/operation': ['searchTimelineItemsAccount'] } },
 		},
 		{
 			displayName: 'Updated After',
@@ -338,6 +374,7 @@ export const searchOptionsProperty: INodeProperties = {
 						'searchItemsAccount',
 						'searchBoardsAccount',
 						'searchDocsAccount',
+						'searchTimelineItemsAccount',
 						'searchWorkspacesAccount',
 					],
 				},
