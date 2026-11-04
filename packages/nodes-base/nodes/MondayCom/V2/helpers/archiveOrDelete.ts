@@ -10,9 +10,9 @@ import type { IDataObject, IExecuteFunctions } from 'n8n-workflow';
 export function withArchiveOrDeleteOutcome(
 	payload: IDataObject,
 	action: ArchiveOrDeleteAction,
-	entity: 'item' | 'board' | 'group' | 'folder',
+	entity: 'item' | 'board' | 'group' | 'folder' | 'doc' | 'block',
 ): IDataObject {
-	if (entity === 'group' || entity === 'folder') {
+	if (entity !== 'item' && entity !== 'board') {
 		return action === 'archive'
 			? { ...payload, archived: true, action }
 			: { ...payload, deleted: true, action };
