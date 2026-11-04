@@ -123,6 +123,12 @@ export async function getArticleWorkspaceFolders(
 	return await loadWorkspaceFolders(this, 'articleWorkspaceId');
 }
 
+export async function getProjectWorkspaceFolders(
+	this: ILoadOptionsFunctions,
+): Promise<INodePropertyOptions[]> {
+	return await loadWorkspaceFolders(this, 'createProjectOptions.workspaceId');
+}
+
 export async function getFormWorkspaceFolders(
 	this: ILoadOptionsFunctions,
 ): Promise<INodePropertyOptions[]> {
