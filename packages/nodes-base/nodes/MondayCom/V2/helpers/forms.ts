@@ -4,13 +4,13 @@ import {
 	type ILoadOptionsFunctions,
 	type INodeProperties,
 	type INodePropertyOptions,
-	NodeApiError,
 	NodeOperationError,
 	tryToParseDateTime,
 } from 'n8n-workflow';
 
 import { normalizeIdList } from './filterOptions';
 import { isPlainJsonObject, safeJsonParse } from './json';
+import { mondayError } from './mondayError';
 import { MondayGraphQLClient } from '../transport/MondayGraphQLClient';
 
 /**
@@ -139,20 +139,6 @@ export function requireFormToken(this: IExecuteFunctions, itemIndex: number): st
 
 export function formUrl(token: string): string {
 	return `${FORM_PUBLIC_URL_BASE}${token}`;
-}
-
-/** The raw monday.com error that the client keeps on a NodeApiError. */
-export function mondayError(error: unknown): { code?: string; message: string } {
-	if (!(error instanceof NodeApiError) || !isPlainJsonObject(error.errorResponse)) {
-		return { message: error instanceof Error ? error.message : String(error) };
-	}
-	const raw = error.errorResponse;
-	const extensions = isPlainJsonObject(raw.extensions) ? raw.extensions : {};
-	const code = extensions.code ?? raw.error_code;
-	return {
-		code: typeof code === 'string' ? code : undefined,
-		message: typeof raw.message === 'string' ? raw.message : error.message,
-	};
 }
 
 /**

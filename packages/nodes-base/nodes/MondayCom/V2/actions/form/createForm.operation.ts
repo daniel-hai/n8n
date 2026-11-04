@@ -6,7 +6,8 @@ import {
 } from 'n8n-workflow';
 
 import { updateDisplayOptions } from '../../../../../utils/utilities';
-import { FORM_BOARD_KIND_OPTIONS, formUrl, mondayError } from '../../helpers/forms';
+import { FORM_BOARD_KIND_OPTIONS, formUrl } from '../../helpers/forms';
+import { mondayError } from '../../helpers/mondayError';
 import {
 	buildUserRowsProperty,
 	extractUserRowIds,

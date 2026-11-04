@@ -13,9 +13,9 @@ import {
 	FORM_QUESTION_FIELDS,
 	FORM_QUESTION_TYPE_OPTIONS,
 	formTokenProperty,
-	mondayError,
 	requireFormToken,
 } from '../../helpers/forms';
+import { mondayError } from '../../helpers/mondayError';
 import type { MondayGraphQLClient } from '../../transport/MondayGraphQLClient';
 import { questionFieldOptions } from './questionFields';
 
