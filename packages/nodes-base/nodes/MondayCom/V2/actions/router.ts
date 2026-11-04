@@ -8,6 +8,7 @@ import {
 import * as agent from './agent';
 import * as board from './board';
 import * as column from './column';
+import * as file from './file';
 import * as folder from './folder';
 import * as group from './group';
 import * as item from './item';
@@ -55,9 +56,15 @@ export async function router(this: IExecuteFunctions): Promise<INodeExecutionDat
 	}
 
 	const monday = { resource, operation } as MondayComPerItemType;
+	const isDownload = resource === 'file' && operation === 'downloadFile';
 
 	for (let i = 0; i < items.length; i++) {
 		try {
+			if (isDownload) {
+				const rows = await file.downloadFile.execute.call(this, client, i);
+				returnData.push(...rows.map((row) => ({ ...row, pairedItem: { item: i } })));
+				continue;
+			}
 			let execute: OperationExecute | undefined;
 			switch (monday.resource) {
 				case 'agent':
@@ -68,6 +75,9 @@ export async function router(this: IExecuteFunctions): Promise<INodeExecutionDat
 					break;
 				case 'column':
 					execute = column[monday.operation]?.execute;
+					break;
+				case 'file':
+					execute = file[monday.operation]?.execute;
 					break;
 				case 'folder':
 					execute = folder[monday.operation]?.execute;
