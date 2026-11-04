@@ -1,9 +1,11 @@
-import type {
-	IDataObject,
-	ILoadOptionsFunctions,
-	INodeListSearchResult,
-	INodeProperties,
-	INodePropertyOptions,
+import {
+	type IDataObject,
+	type ILoadOptionsFunctions,
+	type INode,
+	type INodeListSearchResult,
+	type INodeProperties,
+	type INodePropertyOptions,
+	NodeOperationError,
 } from 'n8n-workflow';
 
 import { SEARCH_MAX_LIMIT } from './accountSearch';
@@ -52,6 +54,18 @@ export const userResourceLocator: INodeProperties = {
 		},
 	],
 };
+
+/**
+ * monday answers an unknown or inaccessible user ID with an empty list, not
+ * an error, so the user reads throw this.
+ */
+export function userNotFoundError(node: INode, userId: string, itemIndex: number) {
+	return new NodeOperationError(
+		node,
+		`User ${userId} was not found. It may never have existed, or your API token may not have access to it.`,
+		{ itemIndex },
+	);
+}
 
 /** Initial window and page size of every user search — the "top 100". */
 const USERS_PAGE_SIZE = 100;
@@ -183,6 +197,61 @@ export async function getTeamsList(this: ILoadOptionsFunctions): Promise<INodePr
 	return ((data.teams ?? []) as TeamRow[])
 		.map((team) => ({ name: team.name, value: team.id }))
 		.sort((a, b) => a.name.localeCompare(b.name));
+}
+
+export const teamResourceLocator: INodeProperties = {
+	displayName: 'Team',
+	name: 'teamId',
+	type: 'resourceLocator',
+	default: { mode: 'list', value: '' },
+	required: true,
+	description: 'The team to operate on',
+	modes: [
+		{
+			displayName: 'From List',
+			name: 'list',
+			type: 'list',
+			typeOptions: {
+				searchListMethod: 'searchTeams',
+				searchable: true,
+			},
+		},
+		{
+			displayName: 'By ID',
+			name: 'id',
+			type: 'string',
+			placeholder: 'e.g. 1234567',
+			validation: [
+				{
+					type: 'regex',
+					properties: {
+						regex: '[0-9]+',
+						errorMessage: 'The team ID must be a number',
+					},
+				},
+			],
+		},
+	],
+};
+
+/**
+ * listSearch method for the team picker. Teams are a bounded collection,
+ * so one full listing is filtered by name in n8n.
+ */
+export async function searchTeams(
+	this: ILoadOptionsFunctions,
+	filter?: string,
+): Promise<INodeListSearchResult> {
+	const client = new MondayGraphQLClient(this);
+	const data = await client.execute('query { teams { id name } }', 0);
+	const filterText = filter?.trim().toLowerCase() ?? '';
+
+	return {
+		results: ((data.teams ?? []) as TeamRow[])
+			.filter((team) => !filterText || team.name.toLowerCase().includes(filterText))
+			.map((team) => ({ name: team.name, value: team.id }))
+			.sort((a, b) => a.name.localeCompare(b.name)),
+	};
 }
 
 /**

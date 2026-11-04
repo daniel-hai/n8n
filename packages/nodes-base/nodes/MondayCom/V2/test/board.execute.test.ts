@@ -1,7 +1,6 @@
 import type { IDataObject, IExecuteFunctions } from 'n8n-workflow';
 import { describe, expect, it, vi } from 'vitest';
 
-import { formatActivityLogRow } from '../actions/board/getActivityLogs.operation';
 import {
 	buildSubscriberRows,
 	buildSubscribersSelection,
@@ -10,6 +9,7 @@ import {
 	buildReplacePlan,
 	execute as changeBoardSubscribers,
 } from '../actions/board/updateBoardSubscribers.operation';
+import { formatActivityLogRow } from '../helpers/activityLog';
 import { buildBoardFieldSelection } from '../helpers/boardFields';
 import type { MondayGraphQLClient } from '../transport/MondayGraphQLClient';
 
