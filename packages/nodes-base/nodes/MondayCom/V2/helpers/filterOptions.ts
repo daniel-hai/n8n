@@ -7,6 +7,7 @@ import {
 } from 'n8n-workflow';
 
 import { formatBoardLabel, isRealBoard } from './boardLocator';
+import { FOLDER_ROOT_PARENT, formatFolderLabel } from './folders';
 import { MondayGraphQLClient } from '../transport/MondayGraphQLClient';
 
 /**
@@ -107,6 +108,71 @@ export async function getCreateBoardWorkspaceFolders(
 	this: ILoadOptionsFunctions,
 ): Promise<INodePropertyOptions[]> {
 	return await loadWorkspaceFolders(this, 'createBoardOptions.workspaceId');
+}
+
+/**
+ * Lists folders for the Folder resource pickers. With no workspace set, it
+ * lists the folders of the Main workspace (`workspace_ids: [null]`). Labels
+ * show the parent ("Parent / Sub"), because the API list is flat.
+ */
+async function loadFolderResourceFolders(
+	context: ILoadOptionsFunctions,
+	workspaceParamPath: string,
+): Promise<INodePropertyOptions[]> {
+	const workspaceId = context.getCurrentNodeParameter(workspaceParamPath, {
+		extractValue: true,
+	}) as string | undefined;
+
+	const client = new MondayGraphQLClient(context);
+	const rows: Array<NamedRow & { parent?: { name?: string } | null }> = [];
+	for (let page = 1; page <= MAX_FOLDER_PAGES; page++) {
+		const data = await client.execute(
+			'query ($workspaceIds: [ID], $limit: Int!, $page: Int!) { folders(workspace_ids: $workspaceIds, limit: $limit, page: $page) { id name parent { id name } } }',
+			0,
+			{ workspaceIds: [workspaceId || null], limit: FOLDERS_PAGE_SIZE, page },
+		);
+		const pageRows = (data.folders ?? []) as typeof rows;
+		rows.push(...pageRows);
+		if (pageRows.length < FOLDERS_PAGE_SIZE) break;
+	}
+
+	return rows
+		.map((row) => ({ name: formatFolderLabel(row), value: row.id }))
+		.sort((a, b) => a.name.localeCompare(b.name));
+}
+
+/** Folder picker for Folder: Update, Delete and Move Object. */
+export async function getFolderList(this: ILoadOptionsFunctions): Promise<INodePropertyOptions[]> {
+	return await loadFolderResourceFolders(this, 'folderWorkspaceId');
+}
+
+/** Parent folder picker for Folder: Create. */
+export async function getCreateFolderParentList(
+	this: ILoadOptionsFunctions,
+): Promise<INodePropertyOptions[]> {
+	return await loadFolderResourceFolders(this, 'createFolderOptions.workspaceId');
+}
+
+/** Destination folder picker for Folder: Move Object. */
+export async function getMoveDestinationFolderList(
+	this: ILoadOptionsFunctions,
+): Promise<INodePropertyOptions[]> {
+	return await loadFolderResourceFolders(this, 'moveDestination.workspaceId');
+}
+
+/**
+ * Parent folder picker for Folder: Update. It adds a "workspace root"
+ * choice and leaves out the folder itself, which cannot be its own parent.
+ */
+export async function getUpdateFolderParentList(
+	this: ILoadOptionsFunctions,
+): Promise<INodePropertyOptions[]> {
+	const folders = await loadFolderResourceFolders(this, 'folderWorkspaceId');
+	const selfId = String(this.getCurrentNodeParameter('folderId') ?? '');
+	return [
+		{ name: 'No Parent (Workspace Root)', value: FOLDER_ROOT_PARENT },
+		...folders.filter((option) => option.value !== selfId),
+	];
 }
 
 const BOARD_LIST_LIMIT = 500;

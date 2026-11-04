@@ -3,11 +3,18 @@ import type { INodeProperties } from 'n8n-workflow';
 import { SEARCH_STRATEGY_OPTIONS } from '../helpers/accountSearch';
 import { boardResourceLocator } from '../helpers/boardLocator';
 import {
+	FOLDER_ATTRIBUTE_NONE,
+	FOLDER_COLOR_OPTIONS,
+	FOLDER_FONT_WEIGHT_OPTIONS,
+	FOLDER_ICON_OPTIONS,
+} from '../helpers/folders';
+import {
 	HIDE_UNTIL_BOARD_SELECTED,
 	itemIdTextProperty,
 	itemListOnlyResourceLocator,
 } from '../helpers/itemLocator';
 import { buildUserRowsProperty } from '../helpers/userLocator';
+import { workspaceResourceLocator } from '../helpers/workspaceLocator';
 
 /**
  * The extended-data toggle shared by Board: Get and Board: Get Many. Its
@@ -326,8 +333,63 @@ export const searchOptionsProperty: INodeProperties = {
 			description:
 				'Only return results from these workspaces. Expressions accept an array or a comma-separated string. Choose from the list, or specify IDs using an <a href="https://docs.n8n.io/code/expressions/">expression</a>.',
 			displayOptions: {
-				show: { '/operation': ['searchItemsAccount', 'searchBoardsAccount'] },
+				show: {
+					'/operation': ['searchItemsAccount', 'searchBoardsAccount', 'searchWorkspacesAccount'],
+				},
 			},
 		},
 	],
 };
+
+/** Scopes the Folder picker of Folder: Update, Delete and Move Object. */
+export const folderWorkspaceProperty: INodeProperties = {
+	...workspaceResourceLocator,
+	name: 'folderWorkspaceId',
+	description:
+		'The workspace that holds the folder. It scopes the Folder list below. Leave it empty for the Main workspace of the account.',
+};
+
+export const folderIdProperty: INodeProperties = {
+	displayName: 'Folder Name or ID',
+	name: 'folderId',
+	type: 'options',
+	typeOptions: {
+		loadOptionsMethod: 'getFolderList',
+		loadOptionsDependsOn: ['folderWorkspaceId.value'],
+	},
+	default: '',
+	required: true,
+	description:
+		'The folder to operate on. Choose from the list, or specify an ID using an <a href="https://docs.n8n.io/code/expressions/">expression</a>.',
+};
+
+/** Color, Custom Icon and Font Weight, for Folder: Create and Update. */
+export const folderStyleOptions: INodeProperties[] = [
+	{
+		displayName: 'Color',
+		name: 'color',
+		type: 'options',
+		options: FOLDER_COLOR_OPTIONS,
+		default: FOLDER_ATTRIBUTE_NONE,
+		description:
+			'The color of the folder in the left pane. "None (Default)" uses the monday.com default.',
+	},
+	{
+		displayName: 'Custom Icon',
+		name: 'customIcon',
+		type: 'options',
+		options: FOLDER_ICON_OPTIONS,
+		default: FOLDER_ATTRIBUTE_NONE,
+		description:
+			'The icon of the folder in the left pane. "None (Default)" uses the monday.com default.',
+	},
+	{
+		displayName: 'Font Weight',
+		name: 'fontWeight',
+		type: 'options',
+		options: FOLDER_FONT_WEIGHT_OPTIONS,
+		default: FOLDER_ATTRIBUTE_NONE,
+		description:
+			'The font weight of the folder name in the left pane. "None (Default)" uses the monday.com default.',
+	},
+];
