@@ -2,6 +2,7 @@
 import { NodeConnectionTypes, type INodeTypeDescription } from 'n8n-workflow';
 
 import * as agent from './agent';
+import * as article from './article';
 import * as board from './board';
 import * as column from './column';
 import * as doc from './doc';
@@ -77,6 +78,7 @@ export const versionDescription: INodeTypeDescription = {
 			noDataExpression: true,
 			options: [
 				{ name: 'Agent', value: 'agent' },
+				{ name: 'Article', value: 'article' },
 				{ name: 'Board', value: 'board' },
 				{ name: 'Board Group', value: 'group' },
 				{ name: 'Column', value: 'column' },
@@ -95,6 +97,7 @@ export const versionDescription: INodeTypeDescription = {
 			default: 'item',
 		},
 		...agent.description,
+		...article.description,
 		...board.description,
 		...column.description,
 		...doc.description,

@@ -19,6 +19,7 @@ import {
 import { getBulkImportColumnFields, getColumnFields } from '../helpers/columnMapper';
 import { searchDocs } from '../helpers/docLocator';
 import {
+	getArticleWorkspaceFolders,
 	getBoardList,
 	getCreateBoardWorkspaceFolders,
 	getCreateFolderParentList,
@@ -58,6 +59,7 @@ export const methods = {
 		getAggregateMinMaxColumns,
 		getAggregateNumericColumns,
 		getApiVersions,
+		getArticleWorkspaceFolders,
 		getBoardColumns,
 		getBoardDocColumns,
 		getBoardFileColumns,

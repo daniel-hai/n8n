@@ -11,9 +11,9 @@ import {
 	assertFormMutationSucceeded,
 	executeFormRequest,
 	formTokenProperty,
-	mondayError,
 	requireFormToken,
 } from '../../helpers/forms';
+import { mondayError } from '../../helpers/mondayError';
 import type { MondayGraphQLClient } from '../../transport/MondayGraphQLClient';
 import { formQuestionProperty } from './questionFields';
 
