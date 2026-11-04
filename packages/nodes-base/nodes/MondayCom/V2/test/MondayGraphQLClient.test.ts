@@ -419,6 +419,35 @@ describe('MondayGraphQLClient', () => {
 			expect(mockContext.helpers.httpRequestWithAuthentication).toHaveBeenCalledTimes(1);
 		});
 
+		it('should show the error_data reasons of a DocMutationException', async () => {
+			mockContext.helpers.httpRequestWithAuthentication.mockResolvedValue({
+				errors: [
+					{
+						message: 'bad request',
+						path: ['create_doc_block'],
+						extensions: {
+							code: 'DocMutationException',
+							status_code: 400,
+							error_data: [
+								{
+									error_type: 'Required property is missing',
+									error_msg: 'column_count is required',
+								},
+								{ error_type: 'Required property is missing', error_msg: 'row_count is required' },
+								{ error_type: 'Required property is missing', error_msg: 'row_count is required' },
+							],
+						},
+					},
+				],
+			});
+
+			await expect(client.execute('mutation { create_doc_block }', 0)).rejects.toMatchObject({
+				message: 'monday.com rejected the doc change',
+				description: expect.stringContaining('column_count is required; row_count is required.'),
+			});
+			expect(mockContext.helpers.httpRequestWithAuthentication).toHaveBeenCalledTimes(1);
+		});
+
 		it('should map plan-gated UserUnauthorizedException to a Pro/Enterprise hint', async () => {
 			// Real shape from create_validation_rule on a free-tier account (2026-07-17)
 			const mockError: MondayGraphQLResponse = {

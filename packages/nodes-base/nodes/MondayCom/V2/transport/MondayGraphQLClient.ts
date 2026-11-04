@@ -48,6 +48,8 @@ export const MondayErrorCode = {
 	DataValidationsError: 'DATA_VALIDATIONS_ERROR',
 	// Permission/plan-gated actions (e.g. validations on non-Pro/Enterprise accounts)
 	UserUnauthorized: 'UserUnauthorizedException',
+	// Doc and block writes. The message is only "bad request"; error_data has the reasons.
+	DocMutationException: 'DocMutationException',
 	GenericError: 'GenericError',
 } as const;
 
@@ -172,6 +174,21 @@ export function formatValidationFailures(
 			return columnIds ? `${message} (column: ${columnIds})` : message;
 		})
 		.join('; ');
+}
+
+/**
+ * Joins the reasons in the error_data of a DocMutationException, for example
+ * "afterBlockId must be UUID". Exported for tests.
+ */
+export function formatDocMutationReasons(
+	errorData: IDataObject | IDataObject[] | undefined,
+): string {
+	if (!Array.isArray(errorData)) return '';
+	const reasons = errorData.flatMap((entry) => {
+		const reason = entry.error_msg ?? entry.message;
+		return typeof reason === 'string' && reason ? [reason] : [];
+	});
+	return [...new Set(reasons)].join('; ');
 }
 
 /**
@@ -680,6 +697,13 @@ export class MondayGraphQLClient {
 						'Your monday.com user or API token lacks the permission this action needs. ' +
 						'Check board permissions and your account plan.';
 				}
+				break;
+			}
+
+			case MondayErrorCode.DocMutationException: {
+				const reasons = formatDocMutationReasons(error.extensions?.error_data);
+				userMessage = 'monday.com rejected the doc change';
+				description = reasons ? `${reasons}.` : `Error details: ${error.message}`;
 				break;
 			}
 
