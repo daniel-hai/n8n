@@ -9,7 +9,10 @@ import * as column from '../actions/column';
 import * as group from '../actions/group';
 import * as item from '../actions/item';
 import { router } from '../actions/router';
+import * as team from '../actions/team';
 import * as update from '../actions/update';
+import * as user from '../actions/user';
+import { versionDescription } from '../actions/versionDescription';
 
 /**
  * Minimal execute context for the router: three input items, Get Item on
@@ -35,6 +38,8 @@ function makeContext(options: {
 				case 'authentication':
 					return 'accessToken';
 				case 'itemId':
+				case 'teamId':
+				case 'userId':
 					return options.itemIds[itemIndex];
 				case 'simplify':
 					return false;
@@ -130,8 +135,50 @@ describe('router', () => {
 		expect(httpRequestWithAuthentication).not.toHaveBeenCalled();
 	});
 
+	it.each([
+		{
+			resource: 'user',
+			operation: 'getUser',
+			ok: (id: string) => ({ data: { users: [{ id }] } }),
+			failure: { data: { users: [] } },
+			error: 'User 2 was not found',
+		},
+		{
+			resource: 'team',
+			operation: 'getTeam',
+			ok: (id: string) => ({ data: { teams: [{ id, name: `Team ${id}` }] } }),
+			failure: columnError,
+			error: 'Invalid column value',
+		},
+	])(
+		'$resource: with Continue On Fail, pairs the error row to the failing middle item',
+		async ({ resource, operation, ok, failure, error }) => {
+			const { context, httpRequestWithAuthentication } = makeContext({
+				continueOnFail: true,
+				itemIds: ['1', '2', '3'],
+				resource,
+				operation,
+			});
+			httpRequestWithAuthentication
+				.mockResolvedValueOnce(ok('1'))
+				.mockResolvedValueOnce(failure)
+				.mockResolvedValueOnce(ok('3'));
+
+			const [output] = await router.call(context);
+
+			expect(output.map((row) => row.pairedItem)).toEqual([{ item: 0 }, { item: 1 }, { item: 2 }]);
+			expect(output[0].json.id).toBe('1');
+			expect(output[1].json).toEqual({ error: expect.stringContaining(error) });
+			expect(output[2].json.id).toBe('3');
+		},
+	);
+
 	it('has an operation module with fields and an execute function for every dropdown option', () => {
-		const resources = { agent, board, column, group, item, update };
+		const resources = { agent, board, column, group, item, team, update, user };
+		const resourceOptions = versionDescription.properties.find((p) => p.name === 'resource');
+		expect(
+			(resourceOptions?.options ?? []).map((o) => ('value' in o ? String(o.value) : '')).sort(),
+		).toEqual(Object.keys(resources).sort());
 		for (const [resource, module] of Object.entries(resources)) {
 			const dropdown = module.description.find((p) => p.name === 'operation');
 			const values = (dropdown?.options ?? []).map((o) => ('value' in o ? String(o.value) : ''));
