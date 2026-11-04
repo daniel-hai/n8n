@@ -16,11 +16,11 @@ import type { IDataObject, INodePropertyOptions } from 'n8n-workflow';
  * - GraphQL rejects declared-but-unused variables, so the variable
  *   definitions are built from the entity/filter combination actually used.
  * - Filter args differ per entity (introspected; the docs are incomplete):
- *   items/boards/workspaces take board_ids or workspace_ids, users none,
- *   updates board_ids+creator_ids.
+ *   items/boards/workspaces take board_ids or workspace_ids, docs only
+ *   workspace_ids, users none, updates board_ids+creator_ids.
  *
- * The namespace also searches docs and timeline items;
- * those come in with the resources that need them.
+ * The namespace also searches timeline items;
+ * those come in with the resource that needs them.
  */
 
 /** The API's hard cap on results per entity type (no pagination exists). */
@@ -36,6 +36,7 @@ export const SEARCH_DEFAULT_LIMIT = 10;
  */
 export const SEARCH_OPERATION_ENTITY: Record<string, string> = {
 	searchBoardsAccount: 'boards',
+	searchDocsAccount: 'docs',
 	searchItemsAccount: 'items',
 	searchUpdatesAccount: 'updates',
 	searchUsersAccount: 'users',
@@ -60,6 +61,7 @@ export const SEARCH_STRATEGY_OPTIONS: INodePropertyOptions[] = [
 const INDEXED_FIELDS: Record<string, string> = {
 	items: 'id name url board_id workspace_id',
 	boards: 'id name description url workspace_id creator_id',
+	docs: 'id name workspace_id',
 	updates: 'id body creator_id item_id board_id created_at updated_at',
 	users: 'id name email',
 	workspaces: 'id name kind description state',
@@ -73,6 +75,7 @@ const INDEXED_FIELDS: Record<string, string> = {
 const LIVE_FIELDS: Record<string, string> = {
 	items: 'id name state url created_at updated_at board { id name } group { id title }',
 	boards: 'id name state board_kind type url items_count workspace { id name }',
+	docs: 'id object_id name url created_at workspace_id created_by { id name }',
 	updates: 'id body text_body created_at updated_at creator { id name } item_id',
 	users: 'id name email title kind status url photo_url { thumb_small }',
 	workspaces: 'id name kind description state',
@@ -82,6 +85,7 @@ const LIVE_FIELDS: Record<string, string> = {
 const ENTITY_TYPE_TAG: Record<string, string> = {
 	items: 'item',
 	boards: 'board',
+	docs: 'doc',
 	updates: 'update',
 	users: 'user',
 	workspaces: 'workspace',
@@ -91,6 +95,7 @@ const ENTITY_TYPE_TAG: Record<string, string> = {
 const ENTITY_FILTER_ARGS: Record<string, string[]> = {
 	items: ['board_ids', 'workspace_ids'],
 	boards: ['board_ids', 'workspace_ids'],
+	docs: ['workspace_ids'],
 	updates: ['board_ids', 'creator_ids'],
 	users: [],
 	workspaces: ['workspace_ids'],
