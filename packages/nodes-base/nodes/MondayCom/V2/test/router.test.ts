@@ -10,6 +10,7 @@ import * as article from '../actions/article';
 import * as board from '../actions/board';
 import * as column from '../actions/column';
 import * as doc from '../actions/doc';
+import * as emailsActivities from '../actions/emailsActivities';
 import * as file from '../actions/file';
 import * as folder from '../actions/folder';
 import * as form from '../actions/form';
@@ -55,6 +56,7 @@ function makeContext(options: {
 				case 'articleObjectId':
 				case 'formTagId':
 				case 'formToken':
+				case 'timelineItemId':
 				case 'query':
 				case 'searchQuery':
 				case 'teamId':
@@ -231,6 +233,15 @@ describe('router', () => {
 			error: 'monday.com could not run the Knowledge Base request',
 		},
 		{
+			resource: 'emailsActivities',
+			operation: 'getTimelineItem',
+			ok: (id: string) => ({ data: { timeline_item: { id } } }),
+			failure: {
+				errors: [{ message: 'Timeline item not found.', extensions: { code: 'NOT_FOUND' } }],
+			},
+			error: 'Timeline item 2 was not found',
+		},
+		{
 			resource: 'form',
 			operation: 'getForm',
 			ok: (id: string) => ({ data: { form: { id, token: id } } }),
@@ -366,6 +377,7 @@ describe('router', () => {
 			board,
 			column,
 			doc,
+			emailsActivities,
 			file,
 			folder,
 			form,

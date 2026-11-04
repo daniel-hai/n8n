@@ -10,6 +10,7 @@ import * as article from './article';
 import * as board from './board';
 import * as column from './column';
 import * as doc from './doc';
+import * as emailsActivities from './emailsActivities';
 import * as file from './file';
 import * as folder from './folder';
 import * as form from './form';
@@ -86,6 +87,9 @@ export async function router(this: IExecuteFunctions): Promise<INodeExecutionDat
 					break;
 				case 'doc':
 					execute = doc[monday.operation]?.execute;
+					break;
+				case 'emailsActivities':
+					execute = emailsActivities[monday.operation]?.execute;
 					break;
 				case 'file':
 					execute = file[monday.operation]?.execute;
