@@ -88,6 +88,63 @@ export interface MondayGraphQLResponse<T = IDataObject> {
 	};
 }
 
+/** Request metadata for Get Rate Limits and the Include Request Info option. */
+export interface MondayRequestInfo {
+	requestId?: string;
+	/** The API version that monday used (api-version response header). */
+	apiVersion?: string;
+	statusCode?: number;
+	/** The RateLimit header: the remaining budget for each quota policy. */
+	rateLimit?: IDataObject;
+	/** The RateLimit-Policy header: the quota of the account. */
+	rateLimitPolicy?: IDataObject;
+}
+
+const RATE_LIMIT_PARAM_NAMES: Record<string, string> = {
+	r: 'remaining',
+	q: 'limit',
+	w: 'windowSeconds',
+	t: 'resetSeconds',
+	qu: 'unit',
+};
+
+/**
+ * Parses the structured rate-limit headers, for example
+ * `"minuteRate";r=3334, "complexityMinute";r=9999999;t=60`, into
+ * `{ minuteRate: { remaining: 3334 }, complexityMinute: { remaining: 9999999, resetSeconds: 60 } }`.
+ */
+export function parseRateLimitHeader(value?: string): IDataObject | undefined {
+	if (!value) return undefined;
+	const result: IDataObject = {};
+	for (const entry of value.split(',')) {
+		const [rawName, ...rawParams] = entry.trim().split(';');
+		const name = rawName?.replace(/"/g, '').trim();
+		if (!name) continue;
+		const params: IDataObject = {};
+		for (const rawParam of rawParams) {
+			const separatorIndex = rawParam.indexOf('=');
+			if (separatorIndex === -1) continue;
+			const key = rawParam.slice(0, separatorIndex).trim();
+			const rawValue = rawParam
+				.slice(separatorIndex + 1)
+				.replace(/"/g, '')
+				.trim();
+			const numeric = Number(rawValue);
+			params[RATE_LIMIT_PARAM_NAMES[key] ?? key] =
+				rawValue !== '' && !Number.isNaN(numeric) ? numeric : rawValue;
+		}
+		result[name] = params;
+	}
+	return result;
+}
+
+interface RequestOptions {
+	/** Overrides the pinned API version for one request. */
+	apiVersion?: string;
+	/** Reads the full response, so the headers become request metadata. */
+	captureInfo?: boolean;
+}
+
 /**
  * Support-ticket trace line appended to every error description, so users
  * can quote the request ID and status code to monday support.
@@ -244,14 +301,32 @@ export class MondayGraphQLClient {
 		return { data, errors: errors ?? [] };
 	}
 
+	/**
+	 * Like execute(), but also returns the request metadata from the
+	 * response headers. It can also use another API version for this request.
+	 */
+	async executeWithInfo(
+		query: string,
+		_itemIndex: number,
+		variables?: Record<string, unknown>,
+		options: { apiVersion?: string } = {},
+	): Promise<{ data: IDataObject; requestInfo: MondayRequestInfo }> {
+		const { data, requestInfo } = await this.executeInternal(query, variables, 3, {
+			apiVersion: options.apiVersion,
+			captureInfo: true,
+		});
+		return { data, requestInfo: requestInfo ?? {} };
+	}
+
 	private async executeInternal(
 		query: string,
 		variables?: Record<string, unknown>,
 		retryAttempts = 3,
-		options: { allowPartial?: boolean } = {},
+		options: RequestOptions & { allowPartial?: boolean } = {},
 	): Promise<{
 		data: IDataObject;
 		errors?: MondayGraphQLError[];
+		requestInfo?: MondayRequestInfo;
 	}> {
 		let lastError: Error | null = null;
 		let lastRetryDelay = this.baseRetryDelayMs;
@@ -262,7 +337,12 @@ export class MondayGraphQLClient {
 
 		for (let attempt = 0; attempt <= retryAttempts; attempt++) {
 			try {
-				const response = await this.makeRequest(query, variables, idempotencyKey);
+				const { response, requestInfo } = await this.makeRequest(
+					query,
+					variables,
+					idempotencyKey,
+					options,
+				);
 
 				if (response.errors && response.errors.length > 0) {
 					// Aliased batch mutations return partial data alongside errors
@@ -273,7 +353,7 @@ export class MondayGraphQLClient {
 						response.data &&
 						Object.values(response.data).some((value) => value !== null && value !== undefined)
 					) {
-						return { data: response.data, errors: response.errors };
+						return { data: response.data, errors: response.errors, requestInfo };
 					}
 					const error = response.errors[0];
 					throw this.mapError(error, response);
@@ -285,7 +365,7 @@ export class MondayGraphQLClient {
 					} as unknown as JsonObject);
 				}
 
-				return { data: response.data };
+				return { data: response.data, requestInfo };
 			} catch (error) {
 				lastError = error as Error;
 
@@ -380,7 +460,8 @@ export class MondayGraphQLClient {
 		query: string,
 		variables?: Record<string, unknown>,
 		idempotencyKey?: string,
-	): Promise<MondayGraphQLResponse> {
+		options: RequestOptions = {},
+	): Promise<{ response: MondayGraphQLResponse; requestInfo?: MondayRequestInfo }> {
 		const body: IDataObject = { query };
 		if (variables) {
 			body.variables = variables;
@@ -395,14 +476,31 @@ export class MondayGraphQLClient {
 					url: MONDAY_API_URL,
 					body,
 					json: true,
+					returnFullResponse: options.captureInfo === true,
 					headers: mondayRequestHeaders({
-						'API-Version': this.apiVersion,
+						'API-Version': options.apiVersion ?? this.apiVersion,
 						...(idempotencyKey ? { 'Idempotency-Key': idempotencyKey } : {}),
 					}),
 				},
 			);
 
-			return raw as MondayGraphQLResponse;
+			if (!options.captureInfo) return { response: raw as MondayGraphQLResponse };
+			const full = raw as {
+				body: MondayGraphQLResponse;
+				statusCode?: number;
+				headers?: Record<string, string>;
+			};
+			const headers = full.headers ?? {};
+			return {
+				response: full.body,
+				requestInfo: {
+					requestId: headers['x-request-id'] ?? full.body?.extensions?.request_id,
+					apiVersion: headers['api-version'],
+					statusCode: full.statusCode,
+					rateLimit: parseRateLimitHeader(headers.ratelimit),
+					rateLimitPolicy: parseRateLimitHeader(headers['ratelimit-policy']),
+				},
+			};
 		} catch (error) {
 			// HTTP-level errors (4xx, 5xx) and network failures
 			if (error instanceof Error) {
