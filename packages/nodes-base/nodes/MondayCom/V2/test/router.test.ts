@@ -10,8 +10,10 @@ import * as board from '../actions/board';
 import * as column from '../actions/column';
 import * as file from '../actions/file';
 import * as folder from '../actions/folder';
+import * as graphql from '../actions/graphql';
 import * as group from '../actions/group';
 import * as item from '../actions/item';
+import * as notification from '../actions/notification';
 import { router } from '../actions/router';
 import * as team from '../actions/team';
 import * as update from '../actions/update';
@@ -43,9 +45,11 @@ function makeContext(options: {
 				case 'authentication':
 					return 'accessToken';
 				case 'itemId':
+				case 'notificationUserIds':
 				case 'assetId':
 				case 'assetIds':
 				case 'folderId':
+				case 'query':
 				case 'searchQuery':
 				case 'teamId':
 				case 'userId':
@@ -191,6 +195,13 @@ describe('router', () => {
 			failure: columnError,
 			error: 'Invalid column value',
 		},
+		{
+			resource: 'graphql',
+			operation: 'graphql',
+			ok: (id: string) => ({ data: { id } }),
+			failure: columnError,
+			error: 'Invalid column value',
+		},
 	])(
 		'$resource: with Continue On Fail, pairs the error row to the failing middle item',
 		async ({ resource, operation, ok, failure, error }) => {
@@ -213,6 +224,32 @@ describe('router', () => {
 			expect(output[2].json.id).toBe('3');
 		},
 	);
+
+	it('notification: with Continue On Fail, pairs the error row to the failing middle item', async () => {
+		const { context, httpRequestWithAuthentication } = makeContext({
+			continueOnFail: true,
+			itemIds: ['1', '2', '3'],
+			resource: 'notification',
+			operation: 'createNotification',
+		});
+		const check = (userId: string, found: boolean) => ({
+			data: { users: found ? [{ id: userId }] : [], target: [{ id: userId }] },
+		});
+		const sent = { data: { notify0: { text: 'Hello' } } };
+		httpRequestWithAuthentication
+			.mockResolvedValueOnce(check('1', true))
+			.mockResolvedValueOnce(sent)
+			.mockResolvedValueOnce(check('2', false))
+			.mockResolvedValueOnce(check('3', true))
+			.mockResolvedValueOnce(sent);
+
+		const [output] = await router.call(context);
+
+		expect(output.map((row) => row.pairedItem)).toEqual([{ item: 0 }, { item: 1 }, { item: 2 }]);
+		expect(output[0].json).toMatchObject({ userId: '1', success: true });
+		expect(output[1].json).toEqual({ error: expect.stringContaining('User 2 was not found') });
+		expect(output[2].json).toMatchObject({ userId: '3', success: true });
+	});
 
 	it('file download: pairs binary rows and the error row to their input items', async () => {
 		const { context, httpRequestWithAuthentication } = makeContext({
@@ -254,8 +291,10 @@ describe('router', () => {
 			column,
 			file,
 			folder,
+			graphql,
 			group,
 			item,
+			notification,
 			team,
 			update,
 			user,

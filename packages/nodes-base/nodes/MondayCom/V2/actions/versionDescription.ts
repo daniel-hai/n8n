@@ -6,8 +6,10 @@ import * as board from './board';
 import * as column from './column';
 import * as file from './file';
 import * as folder from './folder';
+import * as graphql from './graphql';
 import * as group from './group';
 import * as item from './item';
+import * as notification from './notification';
 import * as team from './team';
 import * as update from './update';
 import * as user from './user';
@@ -78,7 +80,9 @@ export const versionDescription: INodeTypeDescription = {
 				{ name: 'Column', value: 'column' },
 				{ name: 'File', value: 'file' },
 				{ name: 'Folder & Object', value: 'folder' },
+				{ name: 'GraphQL', value: 'graphql' },
 				{ name: 'Item', value: 'item' },
+				{ name: 'Notification', value: 'notification' },
 				{ name: 'Team', value: 'team' },
 				{ name: 'Update', value: 'update' },
 				{ name: 'User', value: 'user' },
@@ -91,8 +95,10 @@ export const versionDescription: INodeTypeDescription = {
 		...column.description,
 		...file.description,
 		...folder.description,
+		...graphql.description,
 		...group.description,
 		...item.description,
+		...notification.description,
 		...team.description,
 		...update.description,
 		...user.description,

@@ -29,6 +29,7 @@ type NodeMap = {
 		| 'getWorkspaceObjects'
 		| 'moveObject'
 		| 'updateFolder';
+	graphql: 'getLimits' | 'graphql';
 	group: 'archiveOrDeleteGroup' | 'createGroup' | 'duplicateGroup' | 'getGroups' | 'updateGroup';
 	item:
 		| 'archiveOrDeleteItem'
@@ -44,6 +45,7 @@ type NodeMap = {
 		| 'moveItem'
 		| 'searchItemsAccount'
 		| 'updateItem';
+	notification: 'createNotification';
 	team: 'getTeam' | 'getTeamMembers' | 'getTeams';
 	update: 'addFileToUpdate' | 'createUpdate' | 'getUpdates' | 'searchUpdatesAccount';
 	user: 'getMe' | 'getUser' | 'getUserActivityLogs' | 'getUsers' | 'searchUsersAccount';

@@ -83,7 +83,7 @@ const properties: INodeProperties[] = [
 				typeOptions: { minValue: 1, maxValue: 1000 },
 				default: 50,
 				description: 'Max number of results to return',
-				hint: 'Higher limits consume more of your account’s API complexity budget per run',
+				hint: 'Higher limits consume more of your account’s API complexity budget per run. See the Get Rate Limits operation.',
 			},
 			{
 				displayName: 'Page',
