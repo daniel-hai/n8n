@@ -89,7 +89,9 @@ type NodeMap = {
 		| 'moveItem'
 		| 'searchItemsAccount'
 		| 'updateItem';
+	meeting: 'getMeeting' | 'getMeetings';
 	notification: 'createNotification';
+	portfolio: 'connectProjectToPortfolio' | 'createPortfolio' | 'createProject';
 	team: 'getTeam' | 'getTeamMembers' | 'getTeams';
 	update: 'addFileToUpdate' | 'createUpdate' | 'getUpdates' | 'searchUpdatesAccount';
 	user: 'getMe' | 'getUser' | 'getUserActivityLogs' | 'getUsers' | 'searchUsersAccount';
