@@ -30,6 +30,7 @@ import {
 	getWorkspaceFolders,
 	getWorkspaces,
 } from '../helpers/filterOptions';
+import { getFormQuestionsList, getFormTagsList } from '../helpers/forms';
 import { getBoardGroups, getTargetBoardGroups, searchGroups } from '../helpers/groupLocator';
 import { searchItems } from '../helpers/itemLocator';
 import { getApiVersions } from '../helpers/requestInfo';
@@ -72,6 +73,8 @@ export const methods = {
 		getFilterableBoardColumns,
 		getFilterOperators,
 		getFolderList,
+		getFormQuestionsList,
+		getFormTagsList,
 		getFormWorkspaceFolders,
 		getItemColumnFiles,
 		getItemUpdatesList,
