@@ -8,6 +8,7 @@ import {
 import * as agent from './agent';
 import * as board from './board';
 import * as column from './column';
+import * as doc from './doc';
 import * as file from './file';
 import * as folder from './folder';
 import * as graphql from './graphql';
@@ -77,6 +78,9 @@ export async function router(this: IExecuteFunctions): Promise<INodeExecutionDat
 					break;
 				case 'column':
 					execute = column[monday.operation]?.execute;
+					break;
+				case 'doc':
+					execute = doc[monday.operation]?.execute;
 					break;
 				case 'file':
 					execute = file[monday.operation]?.execute;

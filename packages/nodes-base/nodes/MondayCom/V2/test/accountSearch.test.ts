@@ -31,7 +31,7 @@ describe('accountSearch', () => {
 
 		it('maps every operation value to a known entity with query support', () => {
 			const operations = Object.keys(SEARCH_OPERATION_ENTITY);
-			expect(operations).toHaveLength(5);
+			expect(operations).toHaveLength(6);
 			for (const operation of operations) {
 				const entity = SEARCH_OPERATION_ENTITY[operation];
 				const plan = buildAccountSearchPlan('q', [entity], false, 5);

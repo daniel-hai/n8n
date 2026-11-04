@@ -334,7 +334,12 @@ export const searchOptionsProperty: INodeProperties = {
 				'Only return results from these workspaces. Expressions accept an array or a comma-separated string. Choose from the list, or specify IDs using an <a href="https://docs.n8n.io/code/expressions/">expression</a>.',
 			displayOptions: {
 				show: {
-					'/operation': ['searchItemsAccount', 'searchBoardsAccount', 'searchWorkspacesAccount'],
+					'/operation': [
+						'searchItemsAccount',
+						'searchBoardsAccount',
+						'searchDocsAccount',
+						'searchWorkspacesAccount',
+					],
 				},
 			},
 		},

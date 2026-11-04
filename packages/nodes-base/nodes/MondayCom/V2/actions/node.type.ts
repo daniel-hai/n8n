@@ -21,6 +21,7 @@ type NodeMap = {
 		| 'getColumns'
 		| 'updateColumn'
 		| 'updateColumnLabel';
+	doc: 'exportDocAsMarkdown' | 'getDoc' | 'getDocBlocks' | 'getDocs' | 'searchDocsAccount';
 	file: 'addFileToColumn' | 'downloadFile' | 'getAssets';
 	folder:
 		| 'createFolder'
