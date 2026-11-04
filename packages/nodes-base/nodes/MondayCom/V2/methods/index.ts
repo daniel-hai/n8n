@@ -13,9 +13,14 @@ import {
 	getTargetBoardColumns,
 } from '../helpers/columnOptions';
 import { getBulkImportColumnFields, getColumnFields } from '../helpers/columnMapper';
+import { searchDocs } from '../helpers/docLocator';
 import {
 	getBoardList,
 	getCreateBoardWorkspaceFolders,
+	getCreateFolderParentList,
+	getFolderList,
+	getMoveDestinationFolderList,
+	getUpdateFolderParentList,
 	getWorkspaceFolders,
 	getWorkspaces,
 } from '../helpers/filterOptions';
@@ -32,6 +37,7 @@ import { searchWorkspaces } from '../helpers/workspaceLocator';
 export const methods = {
 	listSearch: {
 		searchBoards,
+		searchDocs,
 		searchGroups,
 		searchItems,
 		searchTeams,
@@ -51,11 +57,15 @@ export const methods = {
 		getClearableBoardColumns,
 		getColumnLabels,
 		getCreateBoardWorkspaceFolders,
+		getCreateFolderParentList,
 		getFilterableBoardColumns,
 		getFilterOperators,
+		getFolderList,
+		getMoveDestinationFolderList,
 		getTargetBoardColumns,
 		getTargetBoardGroups,
 		getTeamsList,
+		getUpdateFolderParentList,
 		getWorkspaceFolders,
 		getWorkspaces,
 	},

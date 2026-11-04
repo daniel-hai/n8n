@@ -21,6 +21,13 @@ type NodeMap = {
 		| 'getColumns'
 		| 'updateColumn'
 		| 'updateColumnLabel';
+	folder:
+		| 'createFolder'
+		| 'deleteFolder'
+		| 'getFolders'
+		| 'getWorkspaceObjects'
+		| 'moveObject'
+		| 'updateFolder';
 	group: 'archiveOrDeleteGroup' | 'createGroup' | 'duplicateGroup' | 'getGroups' | 'updateGroup';
 	item:
 		| 'archiveOrDeleteItem'
@@ -39,6 +46,7 @@ type NodeMap = {
 	team: 'getTeam' | 'getTeamMembers' | 'getTeams';
 	update: 'addFileToUpdate' | 'createUpdate' | 'getUpdates' | 'searchUpdatesAccount';
 	user: 'getMe' | 'getUser' | 'getUserActivityLogs' | 'getUsers' | 'searchUsersAccount';
+	workspace: 'searchWorkspacesAccount';
 };
 
 export type MondayComType = AllEntities<NodeMap>;
