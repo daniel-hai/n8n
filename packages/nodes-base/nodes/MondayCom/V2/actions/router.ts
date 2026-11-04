@@ -11,6 +11,7 @@ import * as column from './column';
 import * as doc from './doc';
 import * as file from './file';
 import * as folder from './folder';
+import * as form from './form';
 import * as graphql from './graphql';
 import * as group from './group';
 import * as item from './item';
@@ -87,6 +88,9 @@ export async function router(this: IExecuteFunctions): Promise<INodeExecutionDat
 					break;
 				case 'folder':
 					execute = folder[monday.operation]?.execute;
+					break;
+				case 'form':
+					execute = form[monday.operation]?.execute;
 					break;
 				case 'graphql':
 					execute = graphql[monday.operation]?.execute;

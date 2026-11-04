@@ -37,6 +37,14 @@ type NodeMap = {
 		| 'searchDocsAccount'
 		| 'updateDocBlock';
 	file: 'addFileToColumn' | 'downloadFile' | 'getAssets';
+	form:
+		| 'activateOrDeactivateForm'
+		| 'createForm'
+		| 'getForm'
+		| 'setFormPassword'
+		| 'shortenFormUrl'
+		| 'updateForm'
+		| 'updateFormSettings';
 	folder:
 		| 'createFolder'
 		| 'deleteFolder'

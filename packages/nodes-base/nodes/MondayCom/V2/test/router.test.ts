@@ -11,6 +11,7 @@ import * as column from '../actions/column';
 import * as doc from '../actions/doc';
 import * as file from '../actions/file';
 import * as folder from '../actions/folder';
+import * as form from '../actions/form';
 import * as graphql from '../actions/graphql';
 import * as group from '../actions/group';
 import * as item from '../actions/item';
@@ -50,6 +51,7 @@ function makeContext(options: {
 				case 'assetId':
 				case 'assetIds':
 				case 'folderId':
+				case 'formToken':
 				case 'query':
 				case 'searchQuery':
 				case 'teamId':
@@ -215,6 +217,20 @@ describe('router', () => {
 			error: 'monday.com could not delete doc 2',
 		},
 		{
+			resource: 'form',
+			operation: 'getForm',
+			ok: (id: string) => ({ data: { form: { id, token: id } } }),
+			failure: {
+				errors: [
+					{
+						message: 'User unauthorized to perform action',
+						extensions: { code: 'USER_UNAUTHORIZED' },
+					},
+				],
+			},
+			error: 'Form 2 was not found, or you have no access to it',
+		},
+		{
 			resource: 'graphql',
 			operation: 'graphql',
 			ok: (id: string) => ({ data: { id } }),
@@ -311,6 +327,7 @@ describe('router', () => {
 			doc,
 			file,
 			folder,
+			form,
 			graphql,
 			group,
 			item,
