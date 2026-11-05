@@ -6,6 +6,7 @@ import { describe, expect, it, vi } from 'vitest';
 import * as agent from '../actions/agent';
 import * as board from '../actions/board';
 import * as column from '../actions/column';
+import * as folder from '../actions/folder';
 import * as group from '../actions/group';
 import * as item from '../actions/item';
 import { router } from '../actions/router';
@@ -13,6 +14,7 @@ import * as team from '../actions/team';
 import * as update from '../actions/update';
 import * as user from '../actions/user';
 import { versionDescription } from '../actions/versionDescription';
+import * as workspace from '../actions/workspace';
 
 /**
  * Minimal execute context for the router: three input items, Get Item on
@@ -38,6 +40,8 @@ function makeContext(options: {
 				case 'authentication':
 					return 'accessToken';
 				case 'itemId':
+				case 'folderId':
+				case 'searchQuery':
 				case 'teamId':
 				case 'userId':
 					return options.itemIds[itemIndex];
@@ -150,6 +154,29 @@ describe('router', () => {
 			failure: columnError,
 			error: 'Invalid column value',
 		},
+		{
+			resource: 'folder',
+			operation: 'deleteFolder',
+			ok: (id: string) => ({ data: { delete_folder: { id, name: `Folder ${id}` } } }),
+			failure: {
+				errors: [
+					{
+						message: 'The folder does not exist. Please check your folder ID and try again',
+						extensions: { code: 'InvalidFolderIdException', status_code: 200 },
+					},
+				],
+			},
+			error: 'The folder does not exist',
+		},
+		{
+			resource: 'workspace',
+			operation: 'searchWorkspacesAccount',
+			ok: (id: string) => ({
+				data: { search: { workspaces: { results: [{ id, indexed_data: { name: `WS ${id}` } }] } } },
+			}),
+			failure: columnError,
+			error: 'Invalid column value',
+		},
 	])(
 		'$resource: with Continue On Fail, pairs the error row to the failing middle item',
 		async ({ resource, operation, ok, failure, error }) => {
@@ -174,7 +201,7 @@ describe('router', () => {
 	);
 
 	it('has an operation module with fields and an execute function for every dropdown option', () => {
-		const resources = { agent, board, column, group, item, team, update, user };
+		const resources = { agent, board, column, folder, group, item, team, update, user, workspace };
 		const resourceOptions = versionDescription.properties.find((p) => p.name === 'resource');
 		expect(
 			(resourceOptions?.options ?? []).map((o) => ('value' in o ? String(o.value) : '')).sort(),

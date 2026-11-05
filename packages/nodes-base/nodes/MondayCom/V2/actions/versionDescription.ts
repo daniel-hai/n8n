@@ -4,11 +4,13 @@ import { NodeConnectionTypes, type INodeTypeDescription } from 'n8n-workflow';
 import * as agent from './agent';
 import * as board from './board';
 import * as column from './column';
+import * as folder from './folder';
 import * as group from './group';
 import * as item from './item';
 import * as team from './team';
 import * as update from './update';
 import * as user from './user';
+import * as workspace from './workspace';
 
 export const versionDescription: INodeTypeDescription = {
 	displayName: 'Monday.com',
@@ -73,20 +75,24 @@ export const versionDescription: INodeTypeDescription = {
 				{ name: 'Board', value: 'board' },
 				{ name: 'Board Group', value: 'group' },
 				{ name: 'Column', value: 'column' },
+				{ name: 'Folder & Object', value: 'folder' },
 				{ name: 'Item', value: 'item' },
 				{ name: 'Team', value: 'team' },
 				{ name: 'Update', value: 'update' },
 				{ name: 'User', value: 'user' },
+				{ name: 'Workspace', value: 'workspace' },
 			],
 			default: 'item',
 		},
 		...agent.description,
 		...board.description,
 		...column.description,
+		...folder.description,
 		...group.description,
 		...item.description,
 		...team.description,
 		...update.description,
 		...user.description,
+		...workspace.description,
 	],
 };

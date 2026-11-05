@@ -8,12 +8,14 @@ import {
 import * as agent from './agent';
 import * as board from './board';
 import * as column from './column';
+import * as folder from './folder';
 import * as group from './group';
 import * as item from './item';
 import type { MondayComPerItemType } from './node.type';
 import * as team from './team';
 import * as update from './update';
 import * as user from './user';
+import * as workspace from './workspace';
 import { MondayGraphQLClient } from '../transport/MondayGraphQLClient';
 
 type OperationExecute = (
@@ -67,6 +69,9 @@ export async function router(this: IExecuteFunctions): Promise<INodeExecutionDat
 				case 'column':
 					execute = column[monday.operation]?.execute;
 					break;
+				case 'folder':
+					execute = folder[monday.operation]?.execute;
+					break;
 				case 'group':
 					execute = group[monday.operation]?.execute;
 					break;
@@ -81,6 +86,9 @@ export async function router(this: IExecuteFunctions): Promise<INodeExecutionDat
 					break;
 				case 'user':
 					execute = user[monday.operation]?.execute;
+					break;
+				case 'workspace':
+					execute = workspace[monday.operation]?.execute;
 					break;
 			}
 			if (!execute) {
