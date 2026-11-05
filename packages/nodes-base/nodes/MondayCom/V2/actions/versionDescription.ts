@@ -6,6 +6,7 @@ import * as article from './article';
 import * as board from './board';
 import * as column from './column';
 import * as doc from './doc';
+import * as emailsActivities from './emailsActivities';
 import * as file from './file';
 import * as folder from './folder';
 import * as form from './form';
@@ -83,6 +84,9 @@ export const versionDescription: INodeTypeDescription = {
 				{ name: 'Board Group', value: 'group' },
 				{ name: 'Column', value: 'column' },
 				{ name: 'Doc', value: 'doc' },
+				// The monday.com product name is plural.
+				// eslint-disable-next-line n8n-nodes-base/node-param-resource-with-plural-option
+				{ name: 'Emails & Activities', value: 'emailsActivities' },
 				{ name: 'File', value: 'file' },
 				{ name: 'Folder & Object', value: 'folder' },
 				{ name: 'Form', value: 'form' },
@@ -101,6 +105,7 @@ export const versionDescription: INodeTypeDescription = {
 		...board.description,
 		...column.description,
 		...doc.description,
+		...emailsActivities.description,
 		...file.description,
 		...folder.description,
 		...form.description,

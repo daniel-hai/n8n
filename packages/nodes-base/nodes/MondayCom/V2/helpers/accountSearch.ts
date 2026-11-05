@@ -17,10 +17,8 @@ import type { IDataObject, INodePropertyOptions } from 'n8n-workflow';
  *   definitions are built from the entity/filter combination actually used.
  * - Filter args differ per entity (introspected; the docs are incomplete):
  *   items/boards/workspaces take board_ids or workspace_ids, docs only
- *   workspace_ids, users none, updates board_ids+creator_ids.
- *
- * The namespace also searches timeline items;
- * those come in with the resource that needs them.
+ *   workspace_ids, users none, updates board_ids+creator_ids, timeline
+ *   items board_ids+workspace_ids+item_ids+type+product_kind.
  */
 
 /** The API's hard cap on results per entity type (no pagination exists). */
@@ -38,6 +36,7 @@ export const SEARCH_OPERATION_ENTITY: Record<string, string> = {
 	searchBoardsAccount: 'boards',
 	searchDocsAccount: 'docs',
 	searchItemsAccount: 'items',
+	searchTimelineItemsAccount: 'timeline_items',
 	searchUpdatesAccount: 'updates',
 	searchUsersAccount: 'users',
 	searchWorkspacesAccount: 'workspaces',
@@ -57,11 +56,46 @@ export const SEARCH_STRATEGY_OPTIONS: INodePropertyOptions[] = [
 	{ name: 'Speed', value: 'SPEED', description: 'Fastest response, simpler matching' },
 ];
 
+/** The TimelineItemKind enum. */
+export const SEARCH_TIMELINE_KIND_OPTIONS: INodePropertyOptions[] = [
+	{ name: 'Activity', value: 'activity' },
+	{ name: 'AI Assistant', value: 'aiAssistant' },
+	{ name: 'AI Reply', value: 'aiReply' },
+	{ name: 'AI Summary', value: 'aiSummary' },
+	{ name: 'Campaigns', value: 'campaigns' },
+	{ name: 'Custom', value: 'custom' },
+	{ name: 'Custom Internal App', value: 'customInternalApp' },
+	{ name: 'Demo Email', value: 'demoEmail' },
+	{ name: 'Email', value: 'email' },
+	{ name: 'Form', value: 'form' },
+	{ name: 'Google Calendar', value: 'googleCalendar' },
+	{ name: 'Meeting', value: 'meeting' },
+	{ name: 'Merged Tickets', value: 'mergedTickets' },
+	{ name: 'Note', value: 'note' },
+	{ name: 'Outlook Calendar', value: 'outlookCalendar' },
+	{ name: 'Outreach Expert Phone Call', value: 'outreachExpertPhoneCall' },
+	{ name: 'Outreach Expert Phone Call V2', value: 'outreachExpertPhoneCallV2' },
+	{ name: 'Phone Call', value: 'phoneCall' },
+	{ name: 'Portal', value: 'portal' },
+	{ name: 'Portfolio Status', value: 'portfolio_status' },
+	{ name: 'Sequences Email', value: 'sequencesEmail' },
+	{ name: 'Video Meeting', value: 'videoMeeting' },
+	{ name: 'Zoom', value: 'zoom' },
+];
+
+/** The TimelineItemProductKind enum. */
+export const SEARCH_TIMELINE_PRODUCT_OPTIONS: INodePropertyOptions[] = [
+	{ name: 'CRM', value: 'crm' },
+	{ name: 'Service', value: 'service' },
+];
+
 /** indexed_data field selection per entity (introspected — full field sets). */
 const INDEXED_FIELDS: Record<string, string> = {
 	items: 'id name url board_id workspace_id',
 	boards: 'id name description url workspace_id creator_id',
 	docs: 'id name workspace_id',
+	timeline_items:
+		'id title summary content type product_kind item_id board_id account_id created_at updated_at',
 	updates: 'id body creator_id item_id board_id created_at updated_at',
 	users: 'id name email',
 	workspaces: 'id name kind description state',
@@ -76,6 +110,7 @@ const LIVE_FIELDS: Record<string, string> = {
 	items: 'id name state url created_at updated_at board { id name } group { id title }',
 	boards: 'id name state board_kind type url items_count workspace { id name }',
 	docs: 'id object_id name url created_at workspace_id created_by { id name }',
+	timeline_items: 'id title type content created_at user { id name } item { id name } board { id }',
 	updates: 'id body text_body created_at updated_at creator { id name } item_id',
 	users: 'id name email title kind status url photo_url { thumb_small }',
 	workspaces: 'id name kind description state',
@@ -86,6 +121,7 @@ const ENTITY_TYPE_TAG: Record<string, string> = {
 	items: 'item',
 	boards: 'board',
 	docs: 'doc',
+	timeline_items: 'timelineItem',
 	updates: 'update',
 	users: 'user',
 	workspaces: 'workspace',
@@ -96,6 +132,7 @@ const ENTITY_FILTER_ARGS: Record<string, string[]> = {
 	items: ['board_ids', 'workspace_ids'],
 	boards: ['board_ids', 'workspace_ids'],
 	docs: ['workspace_ids'],
+	timeline_items: ['board_ids', 'workspace_ids', 'item_ids', 'type', 'product_kind'],
 	updates: ['board_ids', 'creator_ids'],
 	users: [],
 	workspaces: ['workspace_ids'],
@@ -106,12 +143,18 @@ const FILTER_VARIABLES: Record<string, { variable: string; type: string }> = {
 	board_ids: { variable: 'boardIds', type: '[ID!]' },
 	workspace_ids: { variable: 'workspaceIds', type: '[ID!]' },
 	creator_ids: { variable: 'creatorIds', type: '[ID!]' },
+	item_ids: { variable: 'itemIds', type: '[ID!]' },
+	type: { variable: 'timelineType', type: 'TimelineItemKind' },
+	product_kind: { variable: 'timelineProductKind', type: 'TimelineItemProductKind' },
 };
 
 export interface AccountSearchFilters {
 	boardIds?: string[];
 	workspaceIds?: string[];
 	creatorIds?: string[];
+	itemIds?: string[];
+	timelineType?: string;
+	timelineProductKind?: string;
 	/** ISO8601 timestamps for CrossEntityDateRangeInput. */
 	createdAfter?: string;
 	createdBefore?: string;
@@ -168,6 +211,9 @@ export function buildAccountSearchPlan(
 		board_ids: filters.boardIds?.length ? filters.boardIds : undefined,
 		workspace_ids: filters.workspaceIds?.length ? filters.workspaceIds : undefined,
 		creator_ids: filters.creatorIds?.length ? filters.creatorIds : undefined,
+		item_ids: filters.itemIds?.length ? filters.itemIds : undefined,
+		type: filters.timelineType || undefined,
+		product_kind: filters.timelineProductKind || undefined,
 	};
 
 	const declaredFilterVars = new Set<string>();
