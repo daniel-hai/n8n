@@ -117,6 +117,12 @@ export async function getDocWorkspaceFolders(
 	return await loadWorkspaceFolders(this, 'docWorkspaceId');
 }
 
+export async function getArticleWorkspaceFolders(
+	this: ILoadOptionsFunctions,
+): Promise<INodePropertyOptions[]> {
+	return await loadWorkspaceFolders(this, 'articleWorkspaceId');
+}
+
 export async function getFormWorkspaceFolders(
 	this: ILoadOptionsFunctions,
 ): Promise<INodePropertyOptions[]> {

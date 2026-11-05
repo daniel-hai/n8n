@@ -2,6 +2,13 @@ import type { AllEntities } from 'n8n-workflow';
 
 type NodeMap = {
 	agent: 'replyToMention' | 'sendChatMessage';
+	article:
+		| 'createArticle'
+		| 'deleteArticle'
+		| 'getArticleBlocks'
+		| 'getArticles'
+		| 'publishArticle'
+		| 'searchKnowledgeBase';
 	board:
 		| 'aggregateBoardData'
 		| 'archiveOrDeleteBoard'

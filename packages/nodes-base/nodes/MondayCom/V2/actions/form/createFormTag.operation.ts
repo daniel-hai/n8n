@@ -6,12 +6,8 @@ import {
 } from 'n8n-workflow';
 
 import { updateDisplayOptions } from '../../../../../utils/utilities';
-import {
-	executeFormRequest,
-	formTokenProperty,
-	mondayError,
-	requireFormToken,
-} from '../../helpers/forms';
+import { executeFormRequest, formTokenProperty, requireFormToken } from '../../helpers/forms';
+import { mondayError } from '../../helpers/mondayError';
 import type { MondayGraphQLClient } from '../../transport/MondayGraphQLClient';
 
 const properties: INodeProperties[] = [
