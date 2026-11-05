@@ -7,6 +7,7 @@ import type {
 } from 'n8n-workflow';
 import { NodeOperationError } from 'n8n-workflow';
 
+import { AGENT_EVENT, agentInteractionEvent } from './triggerEvents/agentInteraction';
 import {
 	BOARD_EVENT_VALUES,
 	BOARD_EVENTS_WITH_ITEM,
@@ -16,6 +17,7 @@ import {
 	isBoardEvent,
 } from './triggerEvents/boardEvents';
 import type { MondayTriggerEvent } from './triggerEvents/types';
+import { AGENT_TRIGGER_TYPES } from './V2/helpers/agentWebhook';
 import { boardResourceLocator, searchBoards } from './V2/helpers/boardLocator';
 import { getBoardColumns, getBoardLabelColumns, getColumnLabels } from './V2/helpers/columnOptions';
 import { getBoardGroups } from './V2/helpers/groupLocator';
@@ -24,6 +26,7 @@ function getHandler(
 	context: IHookFunctions | IWebhookFunctions,
 	event: unknown,
 ): MondayTriggerEvent {
+	if (event === AGENT_EVENT) return agentInteractionEvent;
 	if (isBoardEvent(event)) return boardEvent;
 	throw new NodeOperationError(context.getNode(), 'This trigger event is not supported.');
 }
@@ -41,16 +44,22 @@ export class MondayComTrigger implements INodeType {
 			name: 'Monday.com Trigger',
 		},
 		inputs: [],
-		// The outputs depend on the event. An item event that watches all items has Items and
-		// Subitems outputs. Other events have one output. The expression cannot use imports.
-		outputs: `={{((event, scope) => {
+		// The outputs depend on the event. An agent event has one output for each selected
+		// trigger type. An item event that watches all items has Items and Subitems outputs.
+		// Other events have one output. The expression cannot use imports.
+		outputs: `={{((event, types, scope) => {
 			if (${JSON.stringify(COMBINED_EVENT_VALUES)}.includes(event)) {
 				if (scope === 'top') return [{ type: 'main', displayName: 'Items' }];
 				if (scope === 'subitems') return [{ type: 'main', displayName: 'Subitems' }];
 				return [{ type: 'main', displayName: 'Items' }, { type: 'main', displayName: 'Subitems' }];
 			}
-			return [{ type: 'main' }];
-		})($parameter["event"], $parameter["itemScope"])}}`,
+			if (event !== '${AGENT_EVENT}') return [{ type: 'main' }];
+			const order = ['chat', 'mention', 'assigned'];
+			const labels = { chat: 'Chat', mention: 'Mention', assigned: 'Assigned' };
+			const selected = Array.isArray(types) ? types : [];
+			const active = order.filter((type) => selected.includes(type));
+			return (active.length > 0 ? active : order).map((type) => ({ type: 'main', displayName: labels[type] }));
+		})($parameter["event"], $parameter["triggerTypes"], $parameter["itemScope"])}}`,
 		credentials: [
 			{
 				name: 'mondayComApi',
@@ -90,7 +99,37 @@ export class MondayComTrigger implements INodeType {
 				default: 'create_item',
 				required: true,
 				description: 'The monday.com event that starts the workflow',
-				options: boardEventOptions,
+				options: [
+					{
+						name: 'Agent Interaction (Beta)',
+						value: AGENT_EVENT,
+						action: 'On agent interaction',
+						description: 'When a monday.com agent gets a chat message, a mention, or an assignment',
+					},
+					...boardEventOptions,
+				],
+			},
+			{
+				displayName:
+					'Use the agent API token, not a user token. On activation this node checks the token and sets the agent webhook to this URL. The URL must be public HTTPS. monday.com rejects localhost. Each output has chatInput and sessionId, so you can connect an AI Agent with "Connected Chat Trigger Node" as the prompt source.',
+				name: 'agentNotice',
+				type: 'notice',
+				default: '',
+				displayOptions: { show: { event: [AGENT_EVENT] } },
+			},
+			{
+				displayName: 'Trigger Types',
+				name: 'triggerTypes',
+				type: 'multiOptions',
+				default: [...AGENT_TRIGGER_TYPES],
+				description:
+					'The agent events that start the workflow. Each selected type has its own output.',
+				options: [
+					{ name: 'Assigned', value: 'assigned' },
+					{ name: 'Chat', value: 'chat' },
+					{ name: 'Mention', value: 'mention' },
+				],
+				displayOptions: { show: { event: [AGENT_EVENT] } },
 			},
 			{
 				...boardResourceLocator,

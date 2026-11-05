@@ -1,6 +1,7 @@
 /* eslint-disable n8n-nodes-base/node-filename-against-convention */
 import { NodeConnectionTypes, type INodeTypeDescription } from 'n8n-workflow';
 
+import * as agent from './agent';
 import * as board from './board';
 import * as column from './column';
 import * as group from './group';
@@ -66,6 +67,7 @@ export const versionDescription: INodeTypeDescription = {
 			type: 'options',
 			noDataExpression: true,
 			options: [
+				{ name: 'Agent', value: 'agent' },
 				{ name: 'Board', value: 'board' },
 				{ name: 'Board Group', value: 'group' },
 				{ name: 'Column', value: 'column' },
@@ -74,6 +76,7 @@ export const versionDescription: INodeTypeDescription = {
 			],
 			default: 'item',
 		},
+		...agent.description,
 		...board.description,
 		...column.description,
 		...group.description,

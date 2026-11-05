@@ -3,6 +3,7 @@ import type { IExecuteFunctions } from 'n8n-workflow';
 import { NodeApiError } from 'n8n-workflow';
 import { describe, expect, it, vi } from 'vitest';
 
+import * as agent from '../actions/agent';
 import * as board from '../actions/board';
 import * as column from '../actions/column';
 import * as group from '../actions/group';
@@ -130,7 +131,7 @@ describe('router', () => {
 	});
 
 	it('has an operation module with fields and an execute function for every dropdown option', () => {
-		const resources = { board, column, group, item, update };
+		const resources = { agent, board, column, group, item, update };
 		for (const [resource, module] of Object.entries(resources)) {
 			const dropdown = module.description.find((p) => p.name === 'operation');
 			const values = (dropdown?.options ?? []).map((o) => ('value' in o ? String(o.value) : ''));
