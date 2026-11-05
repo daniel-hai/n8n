@@ -21,7 +21,12 @@ import {
 } from '../helpers/filterOptions';
 import { getBoardGroups, getTargetBoardGroups, searchGroups } from '../helpers/groupLocator';
 import { searchItems } from '../helpers/itemLocator';
-import { getTeamsList, searchUsers, searchUsersAndTeams } from '../helpers/userLocator';
+import {
+	getTeamsList,
+	searchTeams,
+	searchUsers,
+	searchUsersAndTeams,
+} from '../helpers/userLocator';
 import { searchWorkspaces } from '../helpers/workspaceLocator';
 
 export const methods = {
@@ -29,6 +34,7 @@ export const methods = {
 		searchBoards,
 		searchGroups,
 		searchItems,
+		searchTeams,
 		searchUsers,
 		searchUsersAndTeams,
 		searchWorkspaces,

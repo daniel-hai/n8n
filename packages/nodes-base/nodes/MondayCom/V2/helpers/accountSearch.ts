@@ -16,9 +16,10 @@ import type { IDataObject, INodePropertyOptions } from 'n8n-workflow';
  * - GraphQL rejects declared-but-unused variables, so the variable
  *   definitions are built from the entity/filter combination actually used.
  * - Filter args differ per entity (introspected; the docs are incomplete):
- *   items/boards take board_ids+workspace_ids, updates board_ids+creator_ids.
+ *   items/boards take board_ids+workspace_ids, users none, updates
+ *   board_ids+creator_ids.
  *
- * The namespace also searches docs, users, workspaces and timeline items;
+ * The namespace also searches docs, workspaces and timeline items;
  * those come in with the resources that need them.
  */
 
@@ -37,6 +38,7 @@ export const SEARCH_OPERATION_ENTITY: Record<string, string> = {
 	searchBoardsAccount: 'boards',
 	searchItemsAccount: 'items',
 	searchUpdatesAccount: 'updates',
+	searchUsersAccount: 'users',
 };
 
 /** All Search operation values — for shared displayOptions in the node. */
@@ -58,6 +60,7 @@ const INDEXED_FIELDS: Record<string, string> = {
 	items: 'id name url board_id workspace_id',
 	boards: 'id name description url workspace_id creator_id',
 	updates: 'id body creator_id item_id board_id created_at updated_at',
+	users: 'id name email',
 };
 
 /**
@@ -69,6 +72,7 @@ const LIVE_FIELDS: Record<string, string> = {
 	items: 'id name state url created_at updated_at board { id name } group { id title }',
 	boards: 'id name state board_kind type url items_count workspace { id name }',
 	updates: 'id body text_body created_at updated_at creator { id name } item_id',
+	users: 'id name email title kind status url photo_url { thumb_small }',
 };
 
 /** Singular entityType tag emitted on each output row, per namespace field. */
@@ -76,6 +80,7 @@ const ENTITY_TYPE_TAG: Record<string, string> = {
 	items: 'item',
 	boards: 'board',
 	updates: 'update',
+	users: 'user',
 };
 
 /** Which optional filter args each entity field accepts (introspected). */
@@ -83,6 +88,7 @@ const ENTITY_FILTER_ARGS: Record<string, string[]> = {
 	items: ['board_ids', 'workspace_ids'],
 	boards: ['board_ids', 'workspace_ids'],
 	updates: ['board_ids', 'creator_ids'],
+	users: [],
 };
 
 /** Maps a filter arg name to its GraphQL variable name and type. */
