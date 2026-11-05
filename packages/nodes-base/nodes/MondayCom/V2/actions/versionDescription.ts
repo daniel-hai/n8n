@@ -7,6 +7,7 @@ import * as column from './column';
 import * as doc from './doc';
 import * as file from './file';
 import * as folder from './folder';
+import * as form from './form';
 import * as graphql from './graphql';
 import * as group from './group';
 import * as item from './item';
@@ -82,6 +83,7 @@ export const versionDescription: INodeTypeDescription = {
 				{ name: 'Doc', value: 'doc' },
 				{ name: 'File', value: 'file' },
 				{ name: 'Folder & Object', value: 'folder' },
+				{ name: 'Form', value: 'form' },
 				{ name: 'GraphQL', value: 'graphql' },
 				{ name: 'Item', value: 'item' },
 				{ name: 'Notification', value: 'notification' },
@@ -98,6 +100,7 @@ export const versionDescription: INodeTypeDescription = {
 		...doc.description,
 		...file.description,
 		...folder.description,
+		...form.description,
 		...graphql.description,
 		...group.description,
 		...item.description,

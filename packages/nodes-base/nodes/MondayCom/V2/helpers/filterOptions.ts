@@ -117,6 +117,12 @@ export async function getDocWorkspaceFolders(
 	return await loadWorkspaceFolders(this, 'docWorkspaceId');
 }
 
+export async function getFormWorkspaceFolders(
+	this: ILoadOptionsFunctions,
+): Promise<INodePropertyOptions[]> {
+	return await loadWorkspaceFolders(this, 'formWorkspaceId');
+}
+
 /**
  * Lists folders for the Folder resource pickers. With no workspace set, it
  * lists the folders of the Main workspace (`workspace_ids: [null]`). Labels
