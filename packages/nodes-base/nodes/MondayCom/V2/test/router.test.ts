@@ -55,6 +55,8 @@ function makeContext(options: {
 				case 'teamId':
 				case 'userId':
 					return options.itemIds[itemIndex];
+				case 'docId':
+					return { mode: 'list', value: options.itemIds[itemIndex] };
 				case 'getDocsOptions':
 					return { docIds: options.itemIds[itemIndex] };
 				case 'simplify':
@@ -204,6 +206,13 @@ describe('router', () => {
 			ok: (id: string) => ({ data: { byId: [{ id, object_id: id }], byObjectId: [] } }),
 			failure: { data: { byId: [], byObjectId: [] } },
 			error: 'Doc 2 was not found',
+		},
+		{
+			resource: 'doc',
+			operation: 'deleteDoc',
+			ok: (id: string) => ({ data: { delete_doc: { success: true, id } } }),
+			failure: { data: { delete_doc: { success: false, error: 'Doc not found' } } },
+			error: 'monday.com could not delete doc 2',
 		},
 		{
 			resource: 'graphql',
