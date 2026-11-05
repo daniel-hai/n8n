@@ -28,6 +28,7 @@ import {
 	getFolderList,
 	getFormWorkspaceFolders,
 	getMoveDestinationFolderList,
+	getProjectWorkspaceFolders,
 	getUpdateFolderParentList,
 	getWorkspaceFolders,
 	getWorkspaces,
@@ -35,6 +36,7 @@ import {
 import { getFormQuestionsList, getFormTagsList } from '../helpers/forms';
 import { getBoardGroups, getTargetBoardGroups, searchGroups } from '../helpers/groupLocator';
 import { searchItems } from '../helpers/itemLocator';
+import { searchMeetings } from '../helpers/meetings';
 import { getApiVersions } from '../helpers/requestInfo';
 import {
 	getTeamsList,
@@ -50,6 +52,7 @@ export const methods = {
 		searchDocs,
 		searchGroups,
 		searchItems,
+		searchMeetings,
 		searchTeams,
 		searchUsers,
 		searchUsersAndTeams,
@@ -83,6 +86,7 @@ export const methods = {
 		getItemColumnFiles,
 		getItemUpdatesList,
 		getMoveDestinationFolderList,
+		getProjectWorkspaceFolders,
 		getTargetBoardColumns,
 		getTargetBoardGroups,
 		getTeamsList,
