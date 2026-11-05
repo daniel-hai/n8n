@@ -40,10 +40,15 @@ type NodeMap = {
 	form:
 		| 'activateOrDeactivateForm'
 		| 'createForm'
+		| 'createFormQuestion'
+		| 'createFormTag'
+		| 'deleteFormQuestion'
+		| 'deleteFormTag'
 		| 'getForm'
 		| 'setFormPassword'
 		| 'shortenFormUrl'
 		| 'updateForm'
+		| 'updateFormQuestion'
 		| 'updateFormSettings';
 	folder:
 		| 'createFolder'
