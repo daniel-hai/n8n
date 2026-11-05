@@ -1,9 +1,11 @@
+import { getItemColumnFiles } from '../helpers/assets';
 import { searchBoards } from '../helpers/boardLocator';
 import {
 	getAggregateGroupByColumns,
 	getAggregateMinMaxColumns,
 	getAggregateNumericColumns,
 	getBoardColumns,
+	getBoardFileColumns,
 	getBoardLabelColumns,
 	getBulkImportMatchColumns,
 	getClearableBoardColumns,
@@ -50,6 +52,7 @@ export const methods = {
 		getAggregateMinMaxColumns,
 		getAggregateNumericColumns,
 		getBoardColumns,
+		getBoardFileColumns,
 		getBoardGroups,
 		getBoardLabelColumns,
 		getBoardList,
@@ -61,6 +64,7 @@ export const methods = {
 		getFilterableBoardColumns,
 		getFilterOperators,
 		getFolderList,
+		getItemColumnFiles,
 		getMoveDestinationFolderList,
 		getTargetBoardColumns,
 		getTargetBoardGroups,

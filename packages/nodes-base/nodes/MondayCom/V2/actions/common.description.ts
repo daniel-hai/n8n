@@ -393,3 +393,18 @@ export const folderStyleOptions: INodeProperties[] = [
 			'The font weight of the folder name in the left pane. "None (Default)" uses the monday.com default.',
 	},
 ];
+
+/** File column picker for the File resource. Each operation sets its own description. */
+export const fileColumnProperty: INodeProperties = {
+	displayName: 'File Column Name or ID',
+	name: 'fileColumnId',
+	type: 'options',
+	typeOptions: {
+		loadOptionsMethod: 'getBoardFileColumns',
+		loadOptionsDependsOn: ['boardId.value'],
+	},
+	default: '',
+	required: true,
+	description:
+		'The file column. Choose from the list, or specify an ID using an <a href="https://docs.n8n.io/code/expressions/">expression</a>.',
+};

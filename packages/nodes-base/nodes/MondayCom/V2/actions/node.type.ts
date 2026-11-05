@@ -21,6 +21,7 @@ type NodeMap = {
 		| 'getColumns'
 		| 'updateColumn'
 		| 'updateColumnLabel';
+	file: 'addFileToColumn' | 'downloadFile' | 'getAssets';
 	folder:
 		| 'createFolder'
 		| 'deleteFolder'
@@ -51,8 +52,11 @@ type NodeMap = {
 
 export type MondayComType = AllEntities<NodeMap>;
 
-/** Bulk Import runs once for all input items, so the per-item dispatch excludes it. */
+/**
+ * Bulk Import runs once for all input items. File: Download returns binary
+ * data. The router runs both outside the per-item JSON dispatch.
+ */
 export type MondayComPerItemType = Exclude<
 	MondayComType,
-	{ resource: 'item'; operation: 'bulkImport' }
+	{ resource: 'item'; operation: 'bulkImport' } | { resource: 'file'; operation: 'downloadFile' }
 >;

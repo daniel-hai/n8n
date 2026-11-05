@@ -1,4 +1,6 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
+import { Readable } from 'stream';
+
 import type { IExecuteFunctions } from 'n8n-workflow';
 import { NodeApiError } from 'n8n-workflow';
 import { describe, expect, it, vi } from 'vitest';
@@ -6,6 +8,7 @@ import { describe, expect, it, vi } from 'vitest';
 import * as agent from '../actions/agent';
 import * as board from '../actions/board';
 import * as column from '../actions/column';
+import * as file from '../actions/file';
 import * as folder from '../actions/folder';
 import * as group from '../actions/group';
 import * as item from '../actions/item';
@@ -40,6 +43,8 @@ function makeContext(options: {
 				case 'authentication':
 					return 'accessToken';
 				case 'itemId':
+				case 'assetId':
+				case 'assetIds':
 				case 'folderId':
 				case 'searchQuery':
 				case 'teamId':
@@ -47,6 +52,8 @@ function makeContext(options: {
 					return options.itemIds[itemIndex];
 				case 'simplify':
 					return false;
+				case 'downloadBinaryPropertyName':
+					return 'data';
 				default:
 					return fallback;
 			}
@@ -155,6 +162,13 @@ describe('router', () => {
 			error: 'Invalid column value',
 		},
 		{
+			resource: 'file',
+			operation: 'getAssets',
+			ok: (id: string) => ({ data: { assets: [{ id, name: `File ${id}` }] } }),
+			failure: { data: { assets: [] } },
+			error: 'File 2 was not found',
+		},
+		{
 			resource: 'folder',
 			operation: 'deleteFolder',
 			ok: (id: string) => ({ data: { delete_folder: { id, name: `Folder ${id}` } } }),
@@ -200,8 +214,53 @@ describe('router', () => {
 		},
 	);
 
+	it('file download: pairs binary rows and the error row to their input items', async () => {
+		const { context, httpRequestWithAuthentication } = makeContext({
+			continueOnFail: true,
+			itemIds: ['1', '2', '3'],
+			resource: 'file',
+			operation: 'downloadFile',
+		});
+		const storageUrl = (id: string) =>
+			`https://prod-euc1-files-monday-com.s3.eu-central-1.amazonaws.com/1/resources/${id}/f.txt`;
+		Object.assign(context.helpers, {
+			httpRequest: vi.fn(async () => Readable.from(['body'])),
+			prepareBinaryData: vi.fn(async (_body: unknown, fileName?: string) => ({
+				data: '',
+				mimeType: 'text/plain',
+				fileName,
+			})),
+		});
+		const ok = (id: string) => ({
+			data: { assets: [{ id, name: `f${id}.txt`, public_url: storageUrl(id) }] },
+		});
+		httpRequestWithAuthentication
+			.mockResolvedValueOnce(ok('1'))
+			.mockResolvedValueOnce({ data: { assets: [] } })
+			.mockResolvedValueOnce(ok('3'));
+
+		const [output] = await router.call(context);
+
+		expect(output.map((row) => row.pairedItem)).toEqual([{ item: 0 }, { item: 1 }, { item: 2 }]);
+		expect(output[0].binary?.data?.fileName).toBe('f1.txt');
+		expect(output[1].json).toEqual({ error: 'File 2 was not found' });
+		expect(output[2].json).toEqual({ id: '3', name: 'f3.txt' });
+	});
+
 	it('has an operation module with fields and an execute function for every dropdown option', () => {
-		const resources = { agent, board, column, folder, group, item, team, update, user, workspace };
+		const resources = {
+			agent,
+			board,
+			column,
+			file,
+			folder,
+			group,
+			item,
+			team,
+			update,
+			user,
+			workspace,
+		};
 		const resourceOptions = versionDescription.properties.find((p) => p.name === 'resource');
 		expect(
 			(resourceOptions?.options ?? []).map((o) => ('value' in o ? String(o.value) : '')).sort(),
