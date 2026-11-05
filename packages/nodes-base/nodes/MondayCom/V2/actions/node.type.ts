@@ -1,6 +1,7 @@
 import type { AllEntities } from 'n8n-workflow';
 
 type NodeMap = {
+	agent: 'replyToMention' | 'sendChatMessage';
 	board:
 		| 'aggregateBoardData'
 		| 'archiveOrDeleteBoard'

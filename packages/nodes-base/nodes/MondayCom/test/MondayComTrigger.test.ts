@@ -109,7 +109,10 @@ describe('MondayComTrigger description', () => {
 
 	it('covers every monday.com webhook event exactly once', () => {
 		expect([...MONDAY_WEBHOOK_EVENTS].sort()).toEqual(MONDAY_WEBHOOK_EVENT_TYPES);
-		expect(options.map((option) => option.value)).toEqual(BOARD_EVENT_VALUES);
+		expect(options.map((option) => option.value)).toEqual([
+			'agent_interaction',
+			...BOARD_EVENT_VALUES,
+		]);
 	});
 
 	it('combines six item events with their subitem events', () => {
@@ -159,6 +162,13 @@ describe('MondayComTrigger description', () => {
 		it('has one output for other board events', () => {
 			expect(outputs({ event: 'item_moved_to_any_group', itemScope: 'all' })).toEqual([
 				{ type: 'main' },
+			]);
+		});
+
+		it('has one output for each selected agent trigger type', () => {
+			expect(names({ event: 'agent_interaction', triggerTypes: ['mention', 'chat'] })).toEqual([
+				'Chat',
+				'Mention',
 			]);
 		});
 	});
@@ -494,6 +504,17 @@ describe('MondayComTrigger board events: webhook', () => {
 
 		await node.webhook.call(ctx.webhook);
 
+		expect(ctx.request).not.toHaveBeenCalled();
+	});
+});
+
+describe('MondayComTrigger agent event', () => {
+	it('rejects OAuth2 credentials', async () => {
+		const ctx = makeContext({ event: 'agent_interaction', authentication: 'oAuth2' });
+
+		await expect(methods.create.call(ctx.hook)).rejects.toThrow(
+			'Agent Interaction needs an agent token',
+		);
 		expect(ctx.request).not.toHaveBeenCalled();
 	});
 });

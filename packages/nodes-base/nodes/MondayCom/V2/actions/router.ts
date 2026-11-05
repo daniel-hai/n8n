@@ -5,6 +5,7 @@ import {
 	type INodeExecutionData,
 } from 'n8n-workflow';
 
+import * as agent from './agent';
 import * as board from './board';
 import * as column from './column';
 import * as group from './group';
@@ -55,6 +56,9 @@ export async function router(this: IExecuteFunctions): Promise<INodeExecutionDat
 		try {
 			let execute: OperationExecute | undefined;
 			switch (monday.resource) {
+				case 'agent':
+					execute = agent[monday.operation]?.execute;
+					break;
 				case 'board':
 					execute = board[monday.operation]?.execute;
 					break;
