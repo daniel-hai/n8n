@@ -8,6 +8,7 @@ import { describe, expect, it, vi } from 'vitest';
 import * as agent from '../actions/agent';
 import * as board from '../actions/board';
 import * as column from '../actions/column';
+import * as doc from '../actions/doc';
 import * as file from '../actions/file';
 import * as folder from '../actions/folder';
 import * as graphql from '../actions/graphql';
@@ -54,6 +55,8 @@ function makeContext(options: {
 				case 'teamId':
 				case 'userId':
 					return options.itemIds[itemIndex];
+				case 'getDocsOptions':
+					return { docIds: options.itemIds[itemIndex] };
 				case 'simplify':
 					return false;
 				case 'downloadBinaryPropertyName':
@@ -196,6 +199,13 @@ describe('router', () => {
 			error: 'Invalid column value',
 		},
 		{
+			resource: 'doc',
+			operation: 'getDocs',
+			ok: (id: string) => ({ data: { byId: [{ id, object_id: id }], byObjectId: [] } }),
+			failure: { data: { byId: [], byObjectId: [] } },
+			error: 'Doc 2 was not found',
+		},
+		{
 			resource: 'graphql',
 			operation: 'graphql',
 			ok: (id: string) => ({ data: { id } }),
@@ -289,6 +299,7 @@ describe('router', () => {
 			agent,
 			board,
 			column,
+			doc,
 			file,
 			folder,
 			graphql,
