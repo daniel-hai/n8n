@@ -646,9 +646,13 @@ describe('moveItem', () => {
 
 describe('item input mode for item-only operations', () => {
 	const properties = new MondayComV2(baseDescription).description.properties;
-	// createNotification joins this list when the notification resource is
-	// ported (the community node has 5 item-only operations).
-	const itemOnlyOps = ['createUpdate', 'getItem', 'getItemSubscribers', 'getUpdates'];
+	const itemOnlyOps = [
+		'createNotification',
+		'createUpdate',
+		'getItem',
+		'getItemSubscribers',
+		'getUpdates',
+	];
 
 	it('shows an Item Input selector for every item-only operation', () => {
 		const selectors = properties.filter((p) => p.name === 'itemInputMode');
