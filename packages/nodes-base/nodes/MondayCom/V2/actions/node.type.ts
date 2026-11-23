@@ -36,7 +36,9 @@ type NodeMap = {
 		| 'moveItem'
 		| 'searchItemsAccount'
 		| 'updateItem';
+	team: 'getTeam' | 'getTeamMembers' | 'getTeams';
 	update: 'addFileToUpdate' | 'createUpdate' | 'getUpdates' | 'searchUpdatesAccount';
+	user: 'getMe' | 'getUser' | 'getUserActivityLogs' | 'getUsers' | 'searchUsersAccount';
 };
 
 export type MondayComType = AllEntities<NodeMap>;

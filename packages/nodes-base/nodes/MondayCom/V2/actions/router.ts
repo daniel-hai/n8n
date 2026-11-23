@@ -11,7 +11,9 @@ import * as column from './column';
 import * as group from './group';
 import * as item from './item';
 import type { MondayComPerItemType } from './node.type';
+import * as team from './team';
 import * as update from './update';
+import * as user from './user';
 import { MondayGraphQLClient } from '../transport/MondayGraphQLClient';
 
 type OperationExecute = (
@@ -71,8 +73,14 @@ export async function router(this: IExecuteFunctions): Promise<INodeExecutionDat
 				case 'item':
 					execute = item[monday.operation]?.execute;
 					break;
+				case 'team':
+					execute = team[monday.operation]?.execute;
+					break;
 				case 'update':
 					execute = update[monday.operation]?.execute;
+					break;
+				case 'user':
+					execute = user[monday.operation]?.execute;
 					break;
 			}
 			if (!execute) {

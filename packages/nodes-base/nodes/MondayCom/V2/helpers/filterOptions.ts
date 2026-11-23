@@ -1,4 +1,10 @@
-import type { ILoadOptionsFunctions, INodePropertyOptions } from 'n8n-workflow';
+import {
+	type IExecuteFunctions,
+	type ILoadOptionsFunctions,
+	type INodePropertyOptions,
+	NodeOperationError,
+	tryToParseDateTime,
+} from 'n8n-workflow';
 
 import { formatBoardLabel, isRealBoard } from './boardLocator';
 import { MondayGraphQLClient } from '../transport/MondayGraphQLClient';
@@ -146,6 +152,27 @@ export function toIso8601(value: unknown): string | undefined {
 	const parsed = new Date(raw);
 	if (Number.isNaN(parsed.getTime())) return raw;
 	return parsed.toISOString();
+}
+
+/**
+ * Reads a date filter in the workflow timezone and returns UTC ISO 8601.
+ * An explicit offset in the value wins over the workflow timezone.
+ */
+export function parseDateFilter(
+	this: IExecuteFunctions,
+	value: unknown,
+	filterName: string,
+	itemIndex: number,
+): string | undefined {
+	if (value === undefined || value === null || String(value).trim() === '') return undefined;
+	try {
+		return tryToParseDateTime(value, this.getTimezone()).toUTC().toISO() ?? undefined;
+	} catch {
+		throw new NodeOperationError(this.getNode(), `The ${filterName} filter is not a valid date`, {
+			itemIndex,
+			description: `Received "${String(value)}". Use an ISO 8601 date, for example 2026-01-31T09:00:00.`,
+		});
+	}
 }
 
 /**
