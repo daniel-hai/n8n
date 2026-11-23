@@ -51,6 +51,7 @@ function makeContext(options: {
 				case 'assetId':
 				case 'assetIds':
 				case 'folderId':
+				case 'formTagId':
 				case 'formToken':
 				case 'query':
 				case 'searchQuery':
@@ -284,6 +285,32 @@ describe('router', () => {
 		expect(output[0].json).toMatchObject({ userId: '1', success: true });
 		expect(output[1].json).toEqual({ error: expect.stringContaining('User 2 was not found') });
 		expect(output[2].json).toMatchObject({ userId: '3', success: true });
+	});
+
+	it('form tag: with Continue On Fail, pairs the error row to the failing middle item', async () => {
+		const { context, httpRequestWithAuthentication } = makeContext({
+			continueOnFail: true,
+			itemIds: ['1', '2', '3'],
+			resource: 'form',
+			operation: 'deleteFormTag',
+		});
+		const tags = (id: string, found: boolean) => ({
+			data: { form: { tags: found ? [{ id, name: `tag ${id}` }] : [] } },
+		});
+		const deleted = { data: { delete_form_tag: true } };
+		httpRequestWithAuthentication
+			.mockResolvedValueOnce(tags('1', true))
+			.mockResolvedValueOnce(deleted)
+			.mockResolvedValueOnce(tags('2', false))
+			.mockResolvedValueOnce(tags('3', true))
+			.mockResolvedValueOnce(deleted);
+
+		const [output] = await router.call(context);
+
+		expect(output.map((row) => row.pairedItem)).toEqual([{ item: 0 }, { item: 1 }, { item: 2 }]);
+		expect(output[0].json).toMatchObject({ tagId: '1', deleted: true });
+		expect(output[1].json).toEqual({ error: expect.stringContaining('Tag 2 was not found') });
+		expect(output[2].json).toMatchObject({ tagId: '3', deleted: true });
 	});
 
 	it('file download: pairs binary rows and the error row to their input items', async () => {

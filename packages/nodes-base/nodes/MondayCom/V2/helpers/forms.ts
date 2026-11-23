@@ -1,6 +1,7 @@
 import {
 	type IDataObject,
 	type IExecuteFunctions,
+	type ILoadOptionsFunctions,
 	type INodeProperties,
 	type INodePropertyOptions,
 	NodeApiError,
@@ -8,8 +9,9 @@ import {
 	tryToParseDateTime,
 } from 'n8n-workflow';
 
+import { normalizeIdList } from './filterOptions';
 import { isPlainJsonObject, safeJsonParse } from './json';
-import type { MondayGraphQLClient } from '../transport/MondayGraphQLClient';
+import { MondayGraphQLClient } from '../transport/MondayGraphQLClient';
 
 /**
  * monday.com WorkForms. The API reads and changes a form only by its token.
@@ -326,6 +328,175 @@ export function buildFormSettingsInput(
 		});
 	}
 	return merged;
+}
+
+/** The FormQuestionType enum of the pinned API version. The values mix two cases. */
+export const FORM_QUESTION_TYPE_OPTIONS: INodePropertyOptions[] = [
+	{ name: 'Boolean (Checkbox)', value: 'Boolean' },
+	{ name: 'Connected Boards', value: 'ConnectedBoards' },
+	{ name: 'Country', value: 'Country' },
+	{ name: 'Date', value: 'Date' },
+	{ name: 'Date Range', value: 'DateRange' },
+	{ name: 'Display Text', value: 'DISPLAY_TEXT' },
+	{ name: 'Email', value: 'Email' },
+	{ name: 'File', value: 'File' },
+	{ name: 'Hour', value: 'HOUR' },
+	{ name: 'Link', value: 'Link' },
+	{ name: 'Location', value: 'Location' },
+	{ name: 'Long Text', value: 'LongText' },
+	{ name: 'Multi Select', value: 'MultiSelect' },
+	{ name: 'Name', value: 'Name' },
+	{ name: 'Number', value: 'Number' },
+	{ name: 'Page Block', value: 'PAGE_BLOCK' },
+	{ name: 'People', value: 'People' },
+	{ name: 'Phone', value: 'Phone' },
+	{ name: 'Rating', value: 'Rating' },
+	{ name: 'Short Text', value: 'ShortText' },
+	{ name: 'Signature', value: 'Signature' },
+	{ name: 'Single Select', value: 'SingleSelect' },
+	{ name: 'Subitems', value: 'Subitems' },
+	{ name: 'Updates', value: 'Updates' },
+];
+
+const QUESTION_TYPES = new Set(FORM_QUESTION_TYPE_OPTIONS.map((option) => String(option.value)));
+const CHOICE_QUESTION_TYPES = new Set(['SingleSelect', 'MultiSelect']);
+
+export function assertQuestionType(this: IExecuteFunctions, type: string, itemIndex: number) {
+	if (!QUESTION_TYPES.has(type)) {
+		throw new NodeOperationError(this.getNode(), `Question Type "${type}" is not supported`, {
+			itemIndex,
+			description: `Use one of: ${[...QUESTION_TYPES].join(', ')}.`,
+		});
+	}
+}
+
+export interface FormQuestionSummary {
+	id: string;
+	title: string;
+	type: string;
+}
+
+function toQuestionSummaries(form: unknown): FormQuestionSummary[] {
+	if (!isPlainJsonObject(form) || !Array.isArray(form.questions)) return [];
+	return form.questions.filter(isPlainJsonObject).map((question) => ({
+		id: String(question.id),
+		title: typeof question.title === 'string' ? question.title : '',
+		type: typeof question.type === 'string' ? question.type : '',
+	}));
+}
+
+export async function readFormQuestions(
+	this: IExecuteFunctions,
+	client: MondayGraphQLClient,
+	itemIndex: number,
+	formToken: string,
+): Promise<FormQuestionSummary[]> {
+	const data = await executeFormRequest.call(
+		this,
+		client,
+		itemIndex,
+		formToken,
+		'query ($formToken: String!) { form(formToken: $formToken) { questions { id title type } } }',
+		{ formToken },
+	);
+	return toQuestionSummaries(data.form);
+}
+
+export function questionNotFoundError(
+	this: IExecuteFunctions,
+	questionId: string,
+	formToken: string,
+	questions: FormQuestionSummary[],
+	itemIndex: number,
+): NodeOperationError {
+	return new NodeOperationError(
+		this.getNode(),
+		`Question ${questionId} was not found on form ${formToken}`,
+		{
+			itemIndex,
+			description: `The form has these question IDs: ${questions.map((q) => q.id).join(', ')}.`,
+		},
+	);
+}
+
+/**
+ * Builds the shared fields of CreateQuestionInput and UpdateQuestionInput.
+ * monday.com rejects choices on other types with only "options is not allowed".
+ */
+export function buildQuestionFields(
+	this: IExecuteFunctions,
+	type: string,
+	fields: IDataObject,
+	itemIndex: number,
+): IDataObject {
+	const question: IDataObject = {};
+	if (typeof fields.title === 'string' && fields.title.trim() !== '') {
+		question.title = fields.title.trim();
+	}
+	if (typeof fields.description === 'string' && fields.description !== '') {
+		question.description = fields.description;
+	}
+	if (typeof fields.required === 'boolean') question.required = fields.required;
+	if (typeof fields.visible === 'boolean') question.visible = fields.visible;
+
+	const choices = normalizeIdList(fields.optionLabels);
+	if (choices.length > 0) {
+		if (!CHOICE_QUESTION_TYPES.has(type)) {
+			throw new NodeOperationError(
+				this.getNode(),
+				'Choices work only with Single Select and Multi Select questions',
+				{ itemIndex, description: `The question type is ${type}.` },
+			);
+		}
+		question.options = choices.map((label) => ({ label }));
+	}
+
+	const settings = parseJsonObjectOption.call(
+		this,
+		fields.settingsJson,
+		'Settings (JSON)',
+		itemIndex,
+	);
+	if (settings && Object.keys(settings).length > 0) question.settings = settings;
+	return question;
+}
+
+function formTokenFromLoadOptions(context: ILoadOptionsFunctions): string | null {
+	return extractFormToken(context.getCurrentNodeParameter('formToken'));
+}
+
+export async function getFormQuestionsList(
+	this: ILoadOptionsFunctions,
+): Promise<INodePropertyOptions[]> {
+	const formToken = formTokenFromLoadOptions(this);
+	if (!formToken) return [];
+	const data = await new MondayGraphQLClient(this).execute(
+		'query ($formToken: String!) { form(formToken: $formToken) { questions { id title type } } }',
+		0,
+		{ formToken },
+	);
+	return toQuestionSummaries(data.form).map((question) => ({
+		name: `${question.title || question.id} (${question.type || 'unknown type'})`,
+		value: question.id,
+	}));
+}
+
+export async function getFormTagsList(
+	this: ILoadOptionsFunctions,
+): Promise<INodePropertyOptions[]> {
+	const formToken = formTokenFromLoadOptions(this);
+	if (!formToken) return [];
+	const data = await new MondayGraphQLClient(this).execute(
+		'query ($formToken: String!) { form(formToken: $formToken) { tags { id name } } }',
+		0,
+		{ formToken },
+	);
+	const form = isPlainJsonObject(data.form) ? data.form : {};
+	const tags = Array.isArray(form.tags) ? form.tags.filter(isPlainJsonObject) : [];
+	return tags.map((tag) => ({
+		name: typeof tag.name === 'string' && tag.name !== '' ? tag.name : String(tag.id),
+		value: String(tag.id),
+	}));
 }
 
 /** Throws when monday.com answers a Boolean form mutation with something other than true. */
