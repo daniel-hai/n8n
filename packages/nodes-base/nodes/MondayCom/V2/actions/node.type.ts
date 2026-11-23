@@ -21,7 +21,21 @@ type NodeMap = {
 		| 'getColumns'
 		| 'updateColumn'
 		| 'updateColumnLabel';
-	doc: 'exportDocAsMarkdown' | 'getDoc' | 'getDocBlocks' | 'getDocs' | 'searchDocsAccount';
+	doc:
+		| 'addDocContent'
+		| 'createDoc'
+		| 'createDocBlock'
+		| 'deleteDoc'
+		| 'deleteDocBlocks'
+		| 'duplicateDoc'
+		| 'exportDocAsMarkdown'
+		| 'getDoc'
+		| 'getDocBlocks'
+		| 'getDocs'
+		| 'importDocFromHtml'
+		| 'renameDoc'
+		| 'searchDocsAccount'
+		| 'updateDocBlock';
 	file: 'addFileToColumn' | 'downloadFile' | 'getAssets';
 	folder:
 		| 'createFolder'

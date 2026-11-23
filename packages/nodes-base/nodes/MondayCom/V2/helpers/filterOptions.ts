@@ -110,6 +110,13 @@ export async function getCreateBoardWorkspaceFolders(
 	return await loadWorkspaceFolders(this, 'createBoardOptions.workspaceId');
 }
 
+/** Folder dropdown for Doc: Create and Doc: Import From HTML. */
+export async function getDocWorkspaceFolders(
+	this: ILoadOptionsFunctions,
+): Promise<INodePropertyOptions[]> {
+	return await loadWorkspaceFolders(this, 'docWorkspaceId');
+}
+
 /**
  * Lists folders for the Folder resource pickers. With no workspace set, it
  * lists the folders of the Main workspace (`workspace_ids: [null]`). Labels
