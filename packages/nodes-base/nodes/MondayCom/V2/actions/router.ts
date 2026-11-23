@@ -6,6 +6,7 @@ import {
 } from 'n8n-workflow';
 
 import * as agent from './agent';
+import * as article from './article';
 import * as board from './board';
 import * as column from './column';
 import * as doc from './doc';
@@ -73,6 +74,9 @@ export async function router(this: IExecuteFunctions): Promise<INodeExecutionDat
 			switch (monday.resource) {
 				case 'agent':
 					execute = agent[monday.operation]?.execute;
+					break;
+				case 'article':
+					execute = article[monday.operation]?.execute;
 					break;
 				case 'board':
 					execute = board[monday.operation]?.execute;

@@ -6,6 +6,7 @@ import { NodeApiError } from 'n8n-workflow';
 import { describe, expect, it, vi } from 'vitest';
 
 import * as agent from '../actions/agent';
+import * as article from '../actions/article';
 import * as board from '../actions/board';
 import * as column from '../actions/column';
 import * as doc from '../actions/doc';
@@ -51,6 +52,7 @@ function makeContext(options: {
 				case 'assetId':
 				case 'assetIds':
 				case 'folderId':
+				case 'articleObjectId':
 				case 'formTagId':
 				case 'formToken':
 				case 'query':
@@ -218,6 +220,17 @@ describe('router', () => {
 			error: 'monday.com could not delete doc 2',
 		},
 		{
+			resource: 'article',
+			operation: 'getArticleBlocks',
+			ok: (id: string) => ({ data: { article_blocks: [{ id }] } }),
+			failure: {
+				errors: [
+					{ message: 'Internal server error', extensions: { code: 'INTERNAL_SERVER_ERROR' } },
+				],
+			},
+			error: 'monday.com could not run the Knowledge Base request',
+		},
+		{
 			resource: 'form',
 			operation: 'getForm',
 			ok: (id: string) => ({ data: { form: { id, token: id } } }),
@@ -349,6 +362,7 @@ describe('router', () => {
 	it('has an operation module with fields and an execute function for every dropdown option', () => {
 		const resources = {
 			agent,
+			article,
 			board,
 			column,
 			doc,
