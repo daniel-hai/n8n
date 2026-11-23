@@ -43,6 +43,15 @@ type NodeMap = {
 		| 'renameDoc'
 		| 'searchDocsAccount'
 		| 'updateDocBlock';
+	emailsActivities:
+		| 'createCustomActivity'
+		| 'createTimelineItem'
+		| 'deleteCustomActivity'
+		| 'deleteTimelineItem'
+		| 'getCustomActivities'
+		| 'getTimelineItem'
+		| 'getTimelineItems'
+		| 'searchTimelineItemsAccount';
 	file: 'addFileToColumn' | 'downloadFile' | 'getAssets';
 	form:
 		| 'activateOrDeactivateForm'

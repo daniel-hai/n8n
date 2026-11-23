@@ -1,4 +1,9 @@
-import { type IDataObject, type IExecuteFunctions, NodeOperationError } from 'n8n-workflow';
+import {
+	type IDataObject,
+	type IExecuteFunctions,
+	type INodePropertyOptions,
+	NodeOperationError,
+} from 'n8n-workflow';
 
 import type { MondayGraphQLClient } from '../transport/MondayGraphQLClient';
 import {
@@ -6,9 +11,12 @@ import {
 	buildAccountSearchPlan,
 	flattenSearchResults,
 	SEARCH_OPERATION_ENTITY,
+	SEARCH_TIMELINE_KIND_OPTIONS,
+	SEARCH_TIMELINE_PRODUCT_OPTIONS,
 } from './accountSearch';
 import { normalizeIdList, toIso8601 } from './filterOptions';
 import { extractUserRowIds } from './userLocator';
+import { assertAllowedValue } from './validation';
 
 /**
  * Search: one request against the entity's field on the cross-entity
@@ -39,6 +47,21 @@ export async function searchAcrossAccount(
 		boardIds: normalizeIdList(options.boardIds),
 		workspaceIds: normalizeIdList(options.workspaceIds),
 		creatorIds: extractUserRowIds(options.creatorIds),
+		itemIds: normalizeIdList(options.itemIds),
+		timelineType: optionalEnum(
+			this,
+			options.timelineType,
+			SEARCH_TIMELINE_KIND_OPTIONS,
+			'Timeline Item Type',
+			itemIndex,
+		),
+		timelineProductKind: optionalEnum(
+			this,
+			options.timelineProductKind,
+			SEARCH_TIMELINE_PRODUCT_OPTIONS,
+			'Timeline Item Product',
+			itemIndex,
+		),
 		createdAfter: toIso8601(options.createdAfter),
 		createdBefore: toIso8601(options.createdBefore),
 		updatedAfter: toIso8601(options.updatedAfter),
@@ -56,4 +79,15 @@ export async function searchAcrossAccount(
 
 	const data = await client.execute(plan.query, itemIndex, plan.variables);
 	return flattenSearchResults(data.search as IDataObject | undefined, [entity], includeLiveData);
+}
+
+function optionalEnum(
+	context: IExecuteFunctions,
+	value: unknown,
+	options: INodePropertyOptions[],
+	fieldName: string,
+	itemIndex: number,
+): string | undefined {
+	if (typeof value !== 'string' || value === '') return undefined;
+	return assertAllowedValue.call(context, value, options, fieldName, itemIndex);
 }

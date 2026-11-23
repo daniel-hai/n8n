@@ -648,9 +648,11 @@ describe('item input mode for item-only operations', () => {
 	const properties = new MondayComV2(baseDescription).description.properties;
 	const itemOnlyOps = [
 		'createNotification',
+		'createTimelineItem',
 		'createUpdate',
 		'getItem',
 		'getItemSubscribers',
+		'getTimelineItems',
 		'getUpdates',
 	];
 

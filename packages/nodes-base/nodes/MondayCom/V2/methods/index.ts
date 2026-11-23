@@ -18,6 +18,7 @@ import {
 } from '../helpers/columnOptions';
 import { getBulkImportColumnFields, getColumnFields } from '../helpers/columnMapper';
 import { searchDocs } from '../helpers/docLocator';
+import { getCustomActivitiesList } from '../helpers/emailsActivities';
 import {
 	getArticleWorkspaceFolders,
 	getBoardList,
@@ -71,6 +72,7 @@ export const methods = {
 		getColumnLabels,
 		getCreateBoardWorkspaceFolders,
 		getCreateFolderParentList,
+		getCustomActivitiesList,
 		getDocWorkspaceFolders,
 		getFilterableBoardColumns,
 		getFilterOperators,
