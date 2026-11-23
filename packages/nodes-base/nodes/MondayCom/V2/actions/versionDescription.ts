@@ -4,6 +4,7 @@ import { NodeConnectionTypes, type INodeTypeDescription } from 'n8n-workflow';
 import * as agent from './agent';
 import * as board from './board';
 import * as column from './column';
+import * as doc from './doc';
 import * as file from './file';
 import * as folder from './folder';
 import * as graphql from './graphql';
@@ -78,6 +79,7 @@ export const versionDescription: INodeTypeDescription = {
 				{ name: 'Board', value: 'board' },
 				{ name: 'Board Group', value: 'group' },
 				{ name: 'Column', value: 'column' },
+				{ name: 'Doc', value: 'doc' },
 				{ name: 'File', value: 'file' },
 				{ name: 'Folder & Object', value: 'folder' },
 				{ name: 'GraphQL', value: 'graphql' },
@@ -93,6 +95,7 @@ export const versionDescription: INodeTypeDescription = {
 		...agent.description,
 		...board.description,
 		...column.description,
+		...doc.description,
 		...file.description,
 		...folder.description,
 		...graphql.description,
