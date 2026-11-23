@@ -326,7 +326,8 @@ export class MondayGraphQLClient {
 	 * lands in the mutation's $file variable via the `variables[file]` form
 	 * field. Accepts a stream so large files never have to be held in memory
 	 * — when the binary data is stored on disk/S3 the caller passes
-	 * `getBinaryStream()` output plus the known size.
+	 * `getBinaryStream()` output plus the known size. Other variables travel
+	 * as `variables[name]` form fields.
 	 */
 	async uploadFile(
 		query: string,
@@ -334,9 +335,13 @@ export class MondayGraphQLClient {
 		fileName: string,
 		mimeType: string | undefined,
 		knownLength?: number,
+		variables: Record<string, string> = {},
 	): Promise<IDataObject> {
 		const form = new FormData();
 		form.append('query', query);
+		for (const [name, value] of Object.entries(variables)) {
+			form.append(`variables[${name}]`, value);
+		}
 		form.append('variables[file]', file, {
 			// The filename travels inside a quoted string; strip quotes/CRLF to keep the part header intact.
 			filename: fileName.replace(/["\r\n]/g, '_'),
