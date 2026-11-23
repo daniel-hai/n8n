@@ -12,6 +12,7 @@ import {
 	getColumnLabels,
 	getFilterableBoardColumns,
 	getFilterOperators,
+	getItemUpdatesList,
 	getTargetBoardColumns,
 } from '../helpers/columnOptions';
 import { getBulkImportColumnFields, getColumnFields } from '../helpers/columnMapper';
@@ -28,6 +29,7 @@ import {
 } from '../helpers/filterOptions';
 import { getBoardGroups, getTargetBoardGroups, searchGroups } from '../helpers/groupLocator';
 import { searchItems } from '../helpers/itemLocator';
+import { getApiVersions } from '../helpers/requestInfo';
 import {
 	getTeamsList,
 	searchTeams,
@@ -51,6 +53,7 @@ export const methods = {
 		getAggregateGroupByColumns,
 		getAggregateMinMaxColumns,
 		getAggregateNumericColumns,
+		getApiVersions,
 		getBoardColumns,
 		getBoardFileColumns,
 		getBoardGroups,
@@ -65,6 +68,7 @@ export const methods = {
 		getFilterOperators,
 		getFolderList,
 		getItemColumnFiles,
+		getItemUpdatesList,
 		getMoveDestinationFolderList,
 		getTargetBoardColumns,
 		getTargetBoardGroups,

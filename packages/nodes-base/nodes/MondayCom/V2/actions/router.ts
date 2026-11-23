@@ -10,9 +10,11 @@ import * as board from './board';
 import * as column from './column';
 import * as file from './file';
 import * as folder from './folder';
+import * as graphql from './graphql';
 import * as group from './group';
 import * as item from './item';
 import type { MondayComPerItemType } from './node.type';
+import * as notification from './notification';
 import * as team from './team';
 import * as update from './update';
 import * as user from './user';
@@ -82,11 +84,17 @@ export async function router(this: IExecuteFunctions): Promise<INodeExecutionDat
 				case 'folder':
 					execute = folder[monday.operation]?.execute;
 					break;
+				case 'graphql':
+					execute = graphql[monday.operation]?.execute;
+					break;
 				case 'group':
 					execute = group[monday.operation]?.execute;
 					break;
 				case 'item':
 					execute = item[monday.operation]?.execute;
+					break;
+				case 'notification':
+					execute = notification[monday.operation]?.execute;
 					break;
 				case 'team':
 					execute = team[monday.operation]?.execute;
