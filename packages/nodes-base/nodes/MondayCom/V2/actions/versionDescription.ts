@@ -13,7 +13,9 @@ import * as form from './form';
 import * as graphql from './graphql';
 import * as group from './group';
 import * as item from './item';
+import * as meeting from './meeting';
 import * as notification from './notification';
+import * as portfolio from './portfolio';
 import * as team from './team';
 import * as update from './update';
 import * as user from './user';
@@ -92,7 +94,9 @@ export const versionDescription: INodeTypeDescription = {
 				{ name: 'Form', value: 'form' },
 				{ name: 'GraphQL', value: 'graphql' },
 				{ name: 'Item', value: 'item' },
+				{ name: 'Meeting', value: 'meeting' },
 				{ name: 'Notification', value: 'notification' },
+				{ name: 'Portfolio & Project', value: 'portfolio' },
 				{ name: 'Team', value: 'team' },
 				{ name: 'Update', value: 'update' },
 				{ name: 'User', value: 'user' },
@@ -112,7 +116,9 @@ export const versionDescription: INodeTypeDescription = {
 		...graphql.description,
 		...group.description,
 		...item.description,
+		...meeting.description,
 		...notification.description,
+		...portfolio.description,
 		...team.description,
 		...update.description,
 		...user.description,

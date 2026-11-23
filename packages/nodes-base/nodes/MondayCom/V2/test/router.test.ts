@@ -17,7 +17,9 @@ import * as form from '../actions/form';
 import * as graphql from '../actions/graphql';
 import * as group from '../actions/group';
 import * as item from '../actions/item';
+import * as meeting from '../actions/meeting';
 import * as notification from '../actions/notification';
+import * as portfolio from '../actions/portfolio';
 import { router } from '../actions/router';
 import * as team from '../actions/team';
 import * as update from '../actions/update';
@@ -57,6 +59,8 @@ function makeContext(options: {
 				case 'formTagId':
 				case 'formToken':
 				case 'timelineItemId':
+				case 'meetingId':
+				case 'projectBoardId':
 				case 'query':
 				case 'searchQuery':
 				case 'teamId':
@@ -242,6 +246,15 @@ describe('router', () => {
 			error: 'Timeline item 2 was not found',
 		},
 		{
+			resource: 'meeting',
+			operation: 'getMeeting',
+			ok: (id: string) => ({
+				data: { notetaker: { meetings: { meetings: [{ id }], page_info: null } } },
+			}),
+			failure: { data: { notetaker: { meetings: { meetings: [], page_info: null } } } },
+			error: 'Meeting 2 was not found',
+		},
+		{
 			resource: 'form',
 			operation: 'getForm',
 			ok: (id: string) => ({ data: { form: { id, token: id } } }),
@@ -337,6 +350,36 @@ describe('router', () => {
 		expect(output[2].json).toMatchObject({ tagId: '3', deleted: true });
 	});
 
+	it('portfolio: with Continue On Fail, pairs the error row to the failing middle item', async () => {
+		const { context, httpRequestWithAuthentication } = makeContext({
+			continueOnFail: true,
+			itemIds: ['1', '2', '3'],
+			resource: 'portfolio',
+			operation: 'connectProjectToPortfolio',
+		});
+		const getNodeParameter = context.getNodeParameter.bind(context);
+		context.getNodeParameter = ((name: string, itemIndex: number, fallback?: unknown) =>
+			name === 'portfolioBoardId'
+				? '500'
+				: getNodeParameter(name, itemIndex, fallback)) as typeof context.getNodeParameter;
+		const result = (success: boolean) => ({
+			data: { connect_project_to_portfolio: { success, portfolio_item_id: success ? '9' : null } },
+		});
+		httpRequestWithAuthentication
+			.mockResolvedValueOnce(result(true))
+			.mockResolvedValueOnce(result(false))
+			.mockResolvedValueOnce(result(true));
+
+		const [output] = await router.call(context);
+
+		expect(output.map((row) => row.pairedItem)).toEqual([{ item: 0 }, { item: 1 }, { item: 2 }]);
+		expect(output[0].json).toMatchObject({ projectBoardId: '1', success: true });
+		expect(output[1].json).toEqual({
+			error: 'monday.com could not connect project board 2 to portfolio board 500',
+		});
+		expect(output[2].json).toMatchObject({ projectBoardId: '3', success: true });
+	});
+
 	it('file download: pairs binary rows and the error row to their input items', async () => {
 		const { context, httpRequestWithAuthentication } = makeContext({
 			continueOnFail: true,
@@ -384,7 +427,9 @@ describe('router', () => {
 			graphql,
 			group,
 			item,
+			meeting,
 			notification,
+			portfolio,
 			team,
 			update,
 			user,

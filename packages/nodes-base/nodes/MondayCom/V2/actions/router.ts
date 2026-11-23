@@ -17,8 +17,10 @@ import * as form from './form';
 import * as graphql from './graphql';
 import * as group from './group';
 import * as item from './item';
+import * as meeting from './meeting';
 import type { MondayComPerItemType } from './node.type';
 import * as notification from './notification';
+import * as portfolio from './portfolio';
 import * as team from './team';
 import * as update from './update';
 import * as user from './user';
@@ -109,8 +111,14 @@ export async function router(this: IExecuteFunctions): Promise<INodeExecutionDat
 				case 'item':
 					execute = item[monday.operation]?.execute;
 					break;
+				case 'meeting':
+					execute = meeting[monday.operation]?.execute;
+					break;
 				case 'notification':
 					execute = notification[monday.operation]?.execute;
+					break;
+				case 'portfolio':
+					execute = portfolio[monday.operation]?.execute;
 					break;
 				case 'team':
 					execute = team[monday.operation]?.execute;
